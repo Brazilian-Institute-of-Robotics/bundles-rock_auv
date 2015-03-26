@@ -1,3 +1,4 @@
+Roby.app.app_name = 'RockAUV'
 # This file will only be used if you convert this bundle into a full-fledged
 # Roby application. This is done by calling
 #
