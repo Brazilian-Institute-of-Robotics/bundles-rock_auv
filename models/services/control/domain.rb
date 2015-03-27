@@ -1,8 +1,7 @@
-require 'rock_auv/models/compositions/control/axis'
+require 'rock_auv/models/services/control/axis'
 
-import_types_from 'auv_control'
 module RockAUV
-    module Compositions
+    module Services
         module Control
             # @!macro reference_and_quantity
             #   @param [Symbol] reference the reference frame, as either :world,

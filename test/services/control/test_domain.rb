@@ -1,6 +1,7 @@
-require 'rock_auv/models/compositions/control/domain'
+require 'rock_auv/models/services/control/domain'
+
 module RockAUV
-    module Compositions
+    module Services
         module Control
             describe Domain do
                 describe ".shift_for" do

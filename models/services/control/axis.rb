@@ -1,5 +1,5 @@
 module RockAUV
-    module Compositions
+    module Services
         module Control
             # Representation of a set of axis in {x, y, z, yaw, pitch, roll}
             #

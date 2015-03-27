@@ -1,6 +1,7 @@
-require 'rock_auv/models/compositions/control/axis'
+require 'rock_auv/models/services/control/axis'
+
 module RockAUV
-    module Compositions
+    module Services
         module Control
             describe Axis do
                 attr_reader :axis
