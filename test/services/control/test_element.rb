@@ -24,17 +24,17 @@ module RockAUV
                     end
 
                     it "creates a new dataservice submodel providing the domain-specific services" do
-                        srv = Element.for(domain, service_mappings)
+                        srv = Element.for(Element, domain, service_mappings)
                         assert srv.provides?(WorldPos)
                         assert srv.provides?(BodyEffort)
                     end
                     it "stores the domain in its #domain attribute" do
-                        srv = Element.for(domain, service_mappings)
+                        srv = Element.for(Element, domain, service_mappings)
                         assert_equal domain, srv.domain
                     end
                     it "returns the same submodel for the same domain description" do
-                        srv = Element.for(domain, service_mappings)
-                        assert_same srv, Element.for(domain, service_mappings)
+                        srv = Element.for(Element, domain, service_mappings)
+                        assert_same srv, Element.for(Element, domain, service_mappings)
                     end
                 end
             end

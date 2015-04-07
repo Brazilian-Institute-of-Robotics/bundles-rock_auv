@@ -47,7 +47,7 @@ module RockAUV
                     :effort => BodyEffortControlledSystem]]
 
             def self.for(domains = nil, &block)
-                Control::Element.for(domains, REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS, &block)
+                Control::Element.for(self, domains, REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS, &block)
             end
         end
     end

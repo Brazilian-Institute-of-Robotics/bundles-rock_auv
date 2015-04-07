@@ -16,7 +16,7 @@ module RockAUV
                 # @api private
                 #
                 # Helper method for {Controller.for} and {ControlledSystem.for}
-                def self.for(domain, data_service_mappings, &block)
+                def self.for(root, domain, data_service_mappings, &block)
                     if !domain
                         if !block
                             raise ArgumentError, "domain neither given as argument, nor as a block"
@@ -24,13 +24,13 @@ module RockAUV
                         domain = DSL.eval(&block)
                     end
 
-                    each_submodel do |m|
+                    root.each_submodel do |m|
                         if m.domain == domain
                             return m
                         end
                     end
 
-                    result = new_submodel
+                    result = root.new_submodel
                     result.domain = domain
                     domain.each do |reference, quantity, _|
                         if base_data_service = data_service_mappings[reference][quantity]
