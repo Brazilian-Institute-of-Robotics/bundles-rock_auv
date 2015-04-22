@@ -1,0 +1,18 @@
+#! /usr/bin/env ruby
+
+require 'Qt'
+require 'rock/bundles'
+Bundles.load
+
+require 'rock_auv/auv_control_calibration/ui'
+app = Qt::Application.new(ARGV)
+
+w = Qt::Widget.new
+ui = RockAUV::AUVControlCalibration::Ui::Main.new
+ui.setup_ui(w)
+
+if !ui.selected_conf
+    ui.generate_from_sdf
+end
+w.show
+app.exec

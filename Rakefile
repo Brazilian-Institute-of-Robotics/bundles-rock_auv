@@ -34,3 +34,24 @@ begin
 rescue LoadError => e
     puts "Extension for '#{package_name}' cannot be build -- loading gem failed: #{e}"
 end
+
+def generate_uic(file, *namespace)
+    code = IO.popen(["rbuic4", file]) do |io|
+        io.read
+    end
+    namespace.reverse.each do |ns|
+        code = "module #{ns}\n#{code}\nend"
+    end
+
+    outfile = File.join(File.dirname(file), "ui_" + File.basename(file, '.ui') + ".rb")
+    File.open(outfile, 'w') do |io|
+        io.write code
+    end
+end
+
+task 'ui' do
+    generate_uic 'lib/rock_auv/auv_control_calibration/ui/main.ui', 'RockAUV', 'AUVControlCalibration'
+    generate_uic 'lib/rock_auv/auv_control_calibration/ui/generate_from_sdf.ui', 'RockAUV', 'AUVControlCalibration'
+end
+
+task 'default' => 'ui'
