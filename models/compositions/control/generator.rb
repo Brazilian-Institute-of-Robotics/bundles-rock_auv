@@ -47,7 +47,7 @@ module RockAUV
                     # Sort the producers by reference/quantity they generate
                     producers_by_domains = Hash.new
                     producers.each do |name, raw_producer|
-                        resolved_producer = domains_for_producer(name, raw_producer)
+                        resolved_producer = self.class.producer_elements(name, raw_producer)
                         resolved_producer.each do |p|
                             producers_by_domains[p.domain] ||= Array.new
                             producers_by_domains[p.domain] << p
@@ -76,7 +76,7 @@ module RockAUV
                     result = Hash.new
                     producers.each do |name, p|
                         p = p.to_instance_requirements
-                        result[name] = cascade.add p, :as => name
+                        result[name] = cascade.add p, as: name
                     end
                     result
                 end
