@@ -22,6 +22,14 @@ module RockAUV
                                Orocos::TaskConfigurations.new(loader.task_model_from_name(CONTROLLER_TASK_NAME)))
                 end
 
+                def config_dir
+                    File.join(Bundles.config_dir, 'orogen')
+                end
+
+                def config_file
+                    File.join(config_dir, "#{CONTROLLER_TASK_NAME}.yml")
+                end
+
                 def setup_ui(main)
                     super
 
@@ -47,13 +55,20 @@ module RockAUV
                                     conf_chooser.insert_item(conf_chooser.count - 1, conf_name)
                                 end
                                 conf_chooser.current_index = idx
+                                config.save conf_name, config_file
                                 select_configuration(conf_name)
                             end
                         elsif conf_name
                             select_configuration(conf_name)
                         end
                     end
-                    conf_chooser.current_index = -1
+
+                    if conf_chooser.count > 1
+                        conf_chooser.current_index = 0
+                        select_configuration(conf_chooser.current_text)
+                    else
+                        conf_chooser.current_index = -1
+                    end
                 end
 
                 def generate_from_sdf
@@ -68,9 +83,9 @@ module RockAUV
                 end
 
                 def select_configuration(conf_name)
-                    c = config.conf([conf_name])
-                    matrix = c['matrix'].to_ruby
-                    names  = c['names'].map(&:to_ruby)
+                    c = config.conf_as_ruby(conf_name)
+                    matrix = c['matrix']
+                    names  = c['names']
 
                     matrix_editor.row_count = matrix.rows
                     matrix_editor.column_count = matrix.cols

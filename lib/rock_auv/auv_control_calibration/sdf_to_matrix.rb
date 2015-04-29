@@ -48,7 +48,8 @@ module RockAUV
         def self.sdf_load_thrusters_poses(sdf_model, options = Hash.new)
             options = validate_options options,
                 model_name: nil,
-                plugin_name: 'thrusters'
+                plugin_name: 'thrusters',
+                implicit_naming: true
 
             if sdf_model.respond_to?(:to_str)
                 sdf_model = sdf_load_model_from_file(sdf_model, model_name: options[:model_name])
@@ -65,12 +66,20 @@ module RockAUV
             end
 
             result = Hash.new
-            thruster_plugin.elements.to_a('thruster').map do |thruster_xml|
-                link_name = thruster_xml.attributes['link_name']
-                if !(link = links_by_name[link_name])
-                    raise ArgumentError, "thruster refers to link #{link_name} which does not exist"
+            if options[:implicit_naming]
+                links_by_name.each do |link_name, link|
+                    if link_name =~ /^thruster::/
+                        result[link_name] = link.pose
+                    end
                 end
-                result[link_name] = link.pose
+            else
+                thruster_plugin.elements.to_a('thruster').map do |thruster_xml|
+                    link_name = thruster_xml.attributes['link_name']
+                    if !(link = links_by_name[link_name])
+                        raise ArgumentError, "thruster refers to link #{link_name} which does not exist"
+                    end
+                    result[link_name] = link.pose
+                end
             end
             result
         end
