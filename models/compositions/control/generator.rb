@@ -1,7 +1,7 @@
 using_task_library 'auv_control'
 require 'rock_auv/models/compositions/control/rule'
 require 'rock_auv/models/services/controller'
-require 'rock/models/compositions/constant_generator'
+require 'rock_auv/models/services/controlled_system'
 
 module RockAUV
     module Compositions
@@ -98,7 +98,10 @@ module RockAUV
                     srv = srv.as_real_model
 
                     result = Array.new
-                    srv.model.domain.each do |reference, quantity, axis|
+                    # Here, 'srv' is a bound data service on a composition
+                    # child. We want the real child model. Deference #model
+                    # twice
+                    srv.model.model.domain.each do |reference, quantity, axis|
                         base_srv = Services::Controller.for(Services::Control::Domain.new(reference, quantity, axis))
                         result << Producer.new(name, [reference,quantity], axis, srv.as(base_srv))
                     end
@@ -123,14 +126,17 @@ module RockAUV
                     end
 
                     reference, quantity = *rule.target_domain
-                    output_srv = Control::OUTPUTS[reference][quantity]
+                    output_srv = Services::Controller::REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS[reference][quantity]
+                    if !output_srv
+                        raise NotImplementedError, "no controller service defined for #{reference} #{quantity}"
+                    end
                     convertion_m.provides output_srv, :as => 'cmd',
                         "cmd_out_#{reference}_#{quantity}" => "cmd_out"
 
                     convertion_child = composition_m.add convertion_m, :as => rule.name
                     producer_pairs.each do |p, srv|
                         child_srv = convertion_child.find_data_service(srv.name)
-                        p.srv.connect_to child_srv
+                        p.bound_service.connect_to child_srv
                     end
                     rule.axis.each do |mask, target|
                         if new_axis & mask != 0
