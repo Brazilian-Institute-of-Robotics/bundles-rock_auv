@@ -10,6 +10,8 @@ module RockAUV
             AlignedPos    = Element.new_submodel
             AlignedVel    = Element.new_submodel
             AlignedEffort = Element.new_submodel
+            BodyPos       = Element.new_submodel
+            BodyVel       = Element.new_submodel
             BodyEffort    = Element.new_submodel
 
             module Element

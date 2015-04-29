@@ -14,6 +14,8 @@ module RockAUV
             def self.for(producers)
                 Control::Generator.new(Control::Generator::RULES).create(producers)
             end
+
+            add Rock::Services::JointsOpenLoopControlledSystem, as: 'thrusters'
         end
     end
 end

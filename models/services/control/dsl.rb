@@ -60,6 +60,22 @@ module RockAUV
                 # the given axis
                 #
                 # @!macro common
+                def BodyPos(*axis)
+                    Domain.new(:body, :pos, Axis.new(*axis))
+                end
+
+                # Creates a {Domain} object applying on body and effortfor
+                # the given axis
+                #
+                # @!macro common
+                def BodyVel(*axis)
+                    Domain.new(:body, :vel, Axis.new(*axis))
+                end
+
+                # Creates a {Domain} object applying on body and effortfor
+                # the given axis
+                #
+                # @!macro common
                 def BodyEffort(*axis)
                     Domain.new(:body, :effort, Axis.new(*axis))
                 end

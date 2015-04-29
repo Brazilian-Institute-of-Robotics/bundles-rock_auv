@@ -15,12 +15,30 @@ module RockAUV
             class Generator
                 Axis = Services::Control::Axis
 
-                RULES = [
-                    Rule.new("pos_world2aligned", [:world,:pos], [:aligned,:pos], Hash[Axis.new(:x,:y) => Axis.new(:x,:y)], AuvControl::WorldToAligned),
-                    Rule.new("vel_world2aligned", [:world,:vel], [:aligned,:vel], Hash[Axis.new(:x,:y) => Axis.new(:x,:y)], AuvControl::WorldToAligned),
-                    Rule.new("aligned_pos2vel", [:aligned,:pos], [:aligned,:vel], Hash[], AuvControl::PIDController),
-                    Rule.new("aligned_vel2effort", [:aligned,:vel], [:aligned,:effort], Hash[], AuvControl::PIDController),
-                    Rule.new("effort_aligned2body", [:aligned,:effort], [:body,:effort], Hash[Axis.new(:x,:y,:z) => Axis.new(:x,:y,:z)], AuvControl::AlignedToBody)]
+                DEFAULT_THRUSTER_CONTROL_RULES = [
+                    Rule.new("body_effort2thrust", [:body,:effort], [:body,:thrust],
+                             Hash[],
+                             AuvControl::AccelerationController)
+                ]
+
+                DEFAULT_RULES = [
+                    Rule.new("pos_world2aligned", [:world,:pos], [:aligned,:pos],
+                             Hash[Axis.new(:x,:y) => Axis.new(:x,:y)],
+                             AuvControl::WorldToAligned),
+                    Rule.new("vel_world2aligned", [:world,:vel], [:aligned,:vel],
+                             Hash[Axis.new(:x,:y) => Axis.new(:x,:y)],
+                             AuvControl::WorldToAligned),
+                    Rule.new("aligned_pos2vel", [:aligned,:pos], [:aligned,:vel],
+                             Hash[], AuvControl::PIDController),
+                    Rule.new("vel_aligned2body", [:aligned,:vel], [:body,:vel],
+                             Hash[Axis.new(:x,:y,:z) => Axis.new(:x,:y,:z)],
+                             AuvControl::AlignedToBody),
+                    Rule.new("body_vel2effort", [:body,:vel], [:body,:effort],
+                             Hash[],
+                             AuvControl::PIDController),
+                    *DEFAULT_THRUSTER_CONTROL_RULES
+                ]
+
 
                 Producer = Struct.new :name, :domain, :axis, :bound_service do
                     def to_s
@@ -66,10 +84,22 @@ module RockAUV
                                 break
                             end
                             new_axis, new_producer = self.class.apply_rule(result, rule, resolved_producers)
+
                             producers_by_domains[rule.target_domain] ||= Array.new
                             producers_by_domains[rule.target_domain] << Producer.new(rule.name, rule.target_domain, new_axis, new_producer)
                         end
                     end
+
+                    # Find the body-thrust controller
+                    body_thrust_controllers = producers_by_domains[[:body,:thrust]]
+                    if body_thrust_controllers.empty?
+                        raise InvalidRules, "could not produce a body-thrust controller"
+                    elsif body_thrust_controllers.size > 1
+                        raise InvalidRules, "produced more than one body-thrust controller"
+                    end
+                    body_thrust_controllers.first.
+                        bound_service.connect_to result.thrusters_child
+
                     result
                 end
 
