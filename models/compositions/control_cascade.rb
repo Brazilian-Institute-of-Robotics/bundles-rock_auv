@@ -11,8 +11,8 @@ module RockAUV
             #
             # It can be used directly in profiles, or (at your convenience),
             # by subclassing it
-            def self.for(producers)
-                Control::Generator.new(Control::Generator::RULES).create(producers)
+            def self.for(producers, rules: Control::Generator::DEFAULT_RULES)
+                Control::Generator.new(rules).create(producers)
             end
 
             add Rock::Services::JointsOpenLoopControlledSystem, as: 'thrusters'
