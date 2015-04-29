@@ -38,7 +38,8 @@ module RockAUV
                 end
 
                 def create(producers)
-                    result = Cascade.new_submodel
+                    result = ControlCascade.new_submodel
+                    producers = Hash(producers)
 
                     # Add the producers to the composition, so that we deal only with
                     # children of the composition
@@ -57,10 +58,10 @@ module RockAUV
                     # Apply the rules one by one, in order
                     rules.each do |rule|
                         if resolved_producers = producers_by_domains[rule.source_domain]
-                            debug do
-                                debug "applying #{resolved_producers.size} producers"
+                            RockAUV.debug do
+                                RockAUV.debug "applying #{resolved_producers.size} producers"
                                 resolved_producers.each do |p|
-                                    debug "  #{p}"
+                                    RockAUV.debug "  #{p}"
                                 end
                                 break
                             end
