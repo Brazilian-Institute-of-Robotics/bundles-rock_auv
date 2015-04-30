@@ -13,6 +13,8 @@ module RockAUV
             #
             # This is the implementation of {ControlCascade.for}
             class Generator
+                extend Logger::Root(self.name.to_s, Logger::INFO)
+
                 Axis = Services::Control::Axis
 
                 DEFAULT_THRUSTER_CONTROL_RULES = [
@@ -77,10 +79,10 @@ module RockAUV
                     # Apply the rules one by one, in order
                     rules.each do |rule|
                         if resolved_producers = producers_by_domains[rule.source_domain]
-                            RockAUV.debug do
-                                RockAUV.debug "applying #{resolved_producers.size} producers"
+                            Generator.debug do
+                                Generator.debug "applying #{resolved_producers.size} producers"
                                 resolved_producers.each do |p|
-                                    RockAUV.debug "  #{p}"
+                                    Generator.debug "  #{p}"
                                 end
                                 break
                             end
