@@ -153,7 +153,7 @@ module RockAUV
                         new_axis |= p.axis
                         [p, convertion_m.require_dynamic_service(
                             "in_#{in_reference}_#{in_quantity}",
-                            :as => p.name)]
+                            as: p.name)]
                     end
 
                     reference, quantity = *rule.target_domain
@@ -161,9 +161,11 @@ module RockAUV
                     if !output_srv
                         raise NotImplementedError, "no controller service defined for #{reference} #{quantity}"
                     end
-                    convertion_m.provides output_srv, :as => 'cmd',
-                        "cmd_out_#{reference}_#{quantity}" => "cmd_out"
+                    convertion_m.require_dynamic_service(
+                        "out_#{reference}_#{quantity}",
+                        as: 'cmd')
 
+                    convertion_m = convertion_m.prefer_deployed_tasks("auv_control_#{in_reference}_#{in_quantity}2#{reference}_#{quantity}")
                     convertion_child = composition_m.add convertion_m, :as => rule.name
                     producer_pairs.each do |p, srv|
                         child_srv = convertion_child.find_data_service(srv.name)
