@@ -15,7 +15,7 @@ module RockAUV
         rules = [
             Control::Rule.new('body_pos2effort', [:body,:pos], [:body,:effort],
                               Hash[],
-                              AuvControl::PIDController),
+                              OroGen::AuvControl::PIDController),
             *Control::Generator::DEFAULT_THRUSTER_CONTROL_RULES]
 
         class DirectDepthControl < Compositions::Control::Generator.new(rules).create(depth: depth_generator)

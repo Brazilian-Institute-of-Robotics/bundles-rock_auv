@@ -18,24 +18,25 @@ module RockAUV
                 DEFAULT_THRUSTER_CONTROL_RULES = [
                     Rule.new("body_effort2thrust", [:body,:effort], [:body,:thrust],
                              Hash[],
-                             AuvControl::AccelerationController)
+                             OroGen::AuvControl::AccelerationController)
                 ]
 
                 DEFAULT_RULES = [
                     Rule.new("pos_world2aligned", [:world,:pos], [:aligned,:pos],
                              Hash[Axis.new(:x,:y) => Axis.new(:x,:y)],
-                             AuvControl::WorldToAligned),
+                             OroGen::AuvControl::WorldToAligned),
                     Rule.new("vel_world2aligned", [:world,:vel], [:aligned,:vel],
                              Hash[Axis.new(:x,:y) => Axis.new(:x,:y)],
-                             AuvControl::WorldToAligned),
+                             OroGen::AuvControl::WorldToAligned),
                     Rule.new("aligned_pos2vel", [:aligned,:pos], [:aligned,:vel],
-                             Hash[], AuvControl::PIDController),
+                             Hash[],
+                             OroGen::AuvControl::PIDController),
                     Rule.new("vel_aligned2body", [:aligned,:vel], [:body,:vel],
                              Hash[Axis.new(:x,:y,:z) => Axis.new(:x,:y,:z)],
-                             AuvControl::AlignedToBody),
+                             OroGen::AuvControl::AlignedToBody),
                     Rule.new("body_vel2effort", [:body,:vel], [:body,:effort],
                              Hash[],
-                             AuvControl::PIDController),
+                             OroGen::AuvControl::PIDController),
                     *DEFAULT_THRUSTER_CONTROL_RULES
                 ]
 
