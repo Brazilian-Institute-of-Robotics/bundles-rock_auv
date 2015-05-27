@@ -18,6 +18,13 @@ module RockAUV
                     angular: Eigen::Vector3.new(Base.unset, Base.unset, Base.unset))
                 self.values = Hash['out' => cmd]
             end
+
+            def values
+                v = super().dup
+                v['out'] = v['out'].dup
+                v['out'].time = Time.now
+                v
+            end
         end
     end
 end
