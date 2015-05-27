@@ -1,3 +1,4 @@
+require 'rock/models/compositions/constant_generator'
 require 'rock_auv/models/compositions/control/generator'
 
 module RockAUV
@@ -7,10 +8,10 @@ module RockAUV
                 describe "#producer_elements" do
                     attr_reader :producer
                     before do
-                        service = Services::Controller.for do
-                            AlignedPos(:pitch,:roll) | AlignedVel(:x,:yaw)
-                        end
-                        @producer = Rock::Compositions::ConstantGenerator.for(service)
+                        aligned_pos_srv = Services::Controller.for { AlignedPos(:pitch,:roll)  }
+                        aligned_vel_srv = Services::Controller.for { AlignedVel(:x,:yaw) }
+                        cascade = Syskit::Composition.new_submodel
+                        @producer = cascade.add(Rock::Compositions::ConstantGenerator.for(service), as: 'test')
                     end
 
                     it "splits the producer across its domains" do

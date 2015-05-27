@@ -13,7 +13,7 @@ class OroGen::AuvControl::Base
                             "cmd_out"
                         end
 
-                    provides srv, as: name, "cmd_#{prefix}_#{reference}_#{quantity}" => actual_port_name
+                    provides options[:control_domain_srv], as: name, "cmd_#{prefix}_#{reference}_#{quantity}" => actual_port_name
                 end
             end
         end

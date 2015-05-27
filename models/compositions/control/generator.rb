@@ -157,7 +157,8 @@ module RockAUV
                         new_axis |= p.axis
                         [p, convertion_m.require_dynamic_service(
                             "in_#{in_reference}_#{in_quantity}",
-                            as: p.name)]
+                            as: p.name,
+                            control_domain_srv: Services::ControlledSystem.for(Services::Control::Domain.new(*p.domain, p.axis)))]
                     end
 
                     reference, quantity = *rule.target_domain
@@ -167,7 +168,8 @@ module RockAUV
                     end
                     convertion_m.require_dynamic_service(
                         "out_#{reference}_#{quantity}",
-                        as: 'cmd')
+                        as: 'cmd',
+                        control_domain_srv: Services::Controller.for(Services::Control::Domain.new(reference, quantity, new_axis)))
 
                     convertion_m = convertion_m.prefer_deployed_tasks("auv_control_#{in_reference}_#{in_quantity}2#{reference}_#{quantity}")
                     convertion_child = composition_m.add convertion_m, :as => rule.name
