@@ -120,7 +120,9 @@ module RockAUV
                 #
                 # @param [String] name the name that should be used in the
                 #   returned Producer objects
-                # @param [Model<Component>] producer the producer component
+                # @param [Syskit::Model::CompositionChild] producer the producer
+                #   component. It is the referenced to as the child of the
+                #   generated cascade composition
                 # @return [Array<Producer>]
                 def self.producer_elements(name, producer)
                     srv = producer.find_data_service_from_type(Services::Controller)
