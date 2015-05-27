@@ -185,20 +185,24 @@ module RockAUV
                     [:aligned, :effort] => 5 * 6,
                     [:body, :pos]       => 6 * 6,
                     [:body, :vel]       => 7 * 6,
-                    [:body, :effort]    => 8 * 6]
+                    [:body, :effort]    => 8 * 6,
+                    [:body, :thrust]    => 9 * 6]
 
                 class InvalidReferenceQuantityCombination < ArgumentError; end
                 class InvalidReference < ArgumentError; end
                 REFERENCE_NAMES = SHIFTS.keys.map(&:first).uniq
                 class InvalidQuantity < ArgumentError; end
-                QUANTITY_NAMES  = SHIFTS.keys.map(&:last).uniq
+                QUANTITIES_BY_REFERENCE = Hash.new
+                SHIFTS.each_key do |r, q|
+                    (QUANTITIES_BY_REFERENCE[r] ||= Array.new) << q
+                end
 
                 # @api private
                 #
                 # Helper to build the CONFLICTS list
                 def self.conflict_merge(*specs)
                     encoded = specs.each_slice(2).inject(0) do |e, (reference, axes)|
-                        QUANTITY_NAMES.each do |q|
+                        QUANTITIES_BY_REFERENCE[reference].each do |q|
                             e |= (axes.encoded << Domain.shift_for(reference, q))
                         end
                         e
@@ -216,13 +220,13 @@ module RockAUV
                         r, axes = *if_set
 
                         axes.each do |a|
-                            shifts = QUANTITY_NAMES.map do |q|
+                            shifts = QUANTITIES_BY_REFERENCE[r].map do |q|
                                 shift_for(r, q) + Axis.shift_for(a)
                             end
                             conflicts = shifts.inject(conflicts) do |c, s|
                                 c | (1 << s)
                             end
-                            QUANTITY_NAMES.each do |q|
+                            QUANTITIES_BY_REFERENCE[r].each do |q|
                                 idx = shift_for(r, q) + Axis.shift_for(a)
                                 result[idx] = (1 << idx) | conflicts
                             end
