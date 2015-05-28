@@ -67,6 +67,23 @@ class OroGen::AuvControl::Base
         end
     end
 
+    def self.world_frame?
+        result = nil
+        each_dynamic_controlled_system_service do |srv|
+            srv.model.domain.each do |ref, _, _|
+                if result.nil?
+                    result = (ref == :world)
+                else
+                    if (ref == :world) != result
+                        services = each_required_dynamic_service.map { |srv| "#{srv.name}(#{srv.model})" }.join(", ")
+                        raise ArgumentError, "controller is configured to accept both world and other references: #{services}"
+                    end
+                end
+            end
+        end
+        return !!result
+    end
+
     def self.position_control?
         position_control = nil
         each_dynamic_controlled_system_service do |srv|
@@ -96,6 +113,7 @@ class OroGen::AuvControl::PIDController
     #
     def configure
         super
+        orocos_task.world_frame = self.model.world_frame?
         orocos_task.position_control = self.model.position_control?
     end
 end

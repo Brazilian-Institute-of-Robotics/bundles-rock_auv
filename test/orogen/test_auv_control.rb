@@ -33,6 +33,29 @@ module OroGen
                 end
             end
 
+            describe ".world_frame?" do
+                use_syskit_model PIDController
+
+                it "returns true if the controller's inputs are in the world frame" do
+                    model = PIDController.specialize
+                    model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) })
+                    assert model.world_frame?
+                end
+
+                it "returns false if the controller's inputs are not in the world frame" do
+                    model = PIDController.specialize
+                    model.require_dynamic_service("in_aligned_vel", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { AlignedVel(:z) })
+                    assert !model.world_frame?
+                end
+
+                it "fails configuration if required to process inputs from different reference frames" do
+                    model = PIDController.specialize
+                    model.require_dynamic_service("in_world_vel", as: 'vel_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) })
+                    model.require_dynamic_service("in_aligned_pos", as: 'pos_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { AlignedPos(:z) })
+                    assert_raises(ArgumentError) { model.world_frame? }
+                end
+            end
+
             describe ".position_control?" do
                 use_syskit_model PIDController
 
@@ -65,6 +88,18 @@ module OroGen
                 before do
                     @model = PIDController.specialize
                     model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) })
+                end
+
+                it "sets world_frame to the value of world_frame? (false)" do
+                    task = deploy(model)
+                    flexmock(task.model).should_receive(:world_frame?).once.and_return(false)
+                    assert !syskit_setup_component(task).orocos_task.world_frame
+                end
+
+                it "sets world_frame to the value of world_frame? (true)" do
+                    task = deploy(model)
+                    flexmock(task.model).should_receive(:world_frame?).once.and_return(true)
+                    assert syskit_setup_component(task).orocos_task.world_frame
                 end
 
                 it "sets position_control to the value of position_control? (false)" do
