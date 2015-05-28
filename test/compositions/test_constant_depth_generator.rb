@@ -1,17 +1,17 @@
-require 'models/compositions/constant_depth_generator'
+require 'models/compositions/constant_z_generator'
 
 module RockAUV
     module Compositions
-        describe ConstantDepthGenerator do
-            describe "#depth=" do
-                it "sets the depth parameter" do
-                    task = ConstantDepthGenerator.new
-                    task.depth = 10
-                    assert_equal 10, task.arguments[:depth]
+        describe ConstantZGenerator do
+            describe "#z=" do
+                it "sets the z parameter" do
+                    task = ConstantZGenerator.new
+                    task.z = 10
+                    assert_equal 10, task.arguments[:z]
                 end
                 it "sets the ConstantGenerator's values parameter" do
-                    task = ConstantDepthGenerator.new
-                    task.depth = 10
+                    task = ConstantZGenerator.new
+                    task.z = 10
 
                     values = task.arguments[:values]
                     assert_equal ['out'], values.keys
@@ -25,8 +25,8 @@ module RockAUV
                     assert Base.unset?(cmd.angular.z)
                 end
             end
-            it "generates the expected depth command" do
-                generator = stub_deploy_and_start_composition(ConstantDepthGenerator.with_arguments(depth: 10))
+            it "generates the expected z command" do
+                generator = stub_deploy_and_start(ConstantZGenerator.with_arguments(z: 10))
                 sample = assert_has_one_new_sample(generator.out_port)
                 assert Base.unset?(sample.linear.x)
                 assert Base.unset?(sample.linear.y)

@@ -1,8 +1,8 @@
-require 'models/compositions/direct_depth_control'
+require 'models/compositions/direct_z_control'
 
 module RockAUV
     module Compositions
-        describe DirectDepthControl do
+        describe DirectZControl do
         end
     end
 end
