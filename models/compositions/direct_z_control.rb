@@ -6,7 +6,7 @@ require 'rock/models/services/z_provider'
 module RockAUV
     module Compositions
         rules = [
-            Control::Rule.new('body_pos2effort', [:body,:pos], [:body,:effort],
+            Control::Rule.new('world_pos2body_effort', [:world,:pos], [:body,:effort],
                               Hash[],
                               OroGen::AuvControl::PIDController),
             *Control::Generator::DEFAULT_THRUSTER_CONTROL_RULES]
@@ -23,7 +23,7 @@ module RockAUV
             argument :z
 
             add Rock::Services::ZProvider, as: 'z_samples'
-            z_samples_child.connect_to body_pos2effort_child
+            z_samples_child.connect_to world_pos2body_effort_child
 
             overload 'z', z_child.
                 with_arguments(z: from(:parent_task).z)
