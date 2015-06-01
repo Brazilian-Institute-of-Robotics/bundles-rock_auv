@@ -98,6 +98,24 @@ module RockAUV
                     end
                 end
 
+                describe "conflicts_with?" do
+                    it "returns true if any of the domain parts conflict" do
+                        matrix = Array.new
+                        matrix[3] = 0b00101
+                        d0 = Domain.from_raw(0b101)
+                        d1 = Domain.from_raw(0b00100)
+                        assert d0.conflicts_with?(d1, matrix: matrix)
+                    end
+
+                    it "returns false if none of the domain parts conflict" do
+                        matrix = Array.new
+                        matrix[3] = 0b00101
+                        d0 = Domain.from_raw(0b1001)
+                        d1 = Domain.from_raw(0b00100)
+                        assert d0.conflicts_with?(d1, matrix: matrix)
+                    end
+                end
+
                 describe "#|" do
                     it "merges domains" do
                         domain = Domain.new(:world, :pos, Axis.x!) |

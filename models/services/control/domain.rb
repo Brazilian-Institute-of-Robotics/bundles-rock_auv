@@ -215,6 +215,10 @@ module RockAUV
                 #
                 # Builds a matrix that allows to compute conflicts between
                 # control domains
+                #
+                # The generated matrix is an array where the index is a shift in
+                # the domain bitfield and the elements are a bitfield where ones
+                # mark conflicting parts of the control domain
                 def self.build_conflict_matrix(conflict_hash)
                     result = Array.new(SHIFTS.size * 6, 0)
                     conflict_hash.each do |if_set, conflicts|
@@ -234,6 +238,34 @@ module RockAUV
                         end
                     end
                     result
+                end
+
+                # Tests if controllers of two different domains conflict
+                #
+                # "Conflicting" here means that controllers that act on the two
+                # domains cannot run at the same time (because they would end up
+                # controlling the same output domain)
+                #
+                # @param [Domain] other the domain to test against
+                # @param [Array] matrix the conflict matrix. See
+                #   {.build_conflict_matrix} for more information
+                def conflicts_with?(other, matrix: CONFLICTS_MATRIX)
+                    this  = self.encoded
+                    other = other.encoded
+
+                    shift = 0
+                    while true
+                        while this && (this & 1) == 0
+                            this >>= 1
+                            shift += 1
+                        end
+                        break if !this
+
+                        if (matrix[shift] & other) != 0
+                            return true
+                        end
+                    end
+                    false
                 end
 
                 CONFLICTS = Hash[
