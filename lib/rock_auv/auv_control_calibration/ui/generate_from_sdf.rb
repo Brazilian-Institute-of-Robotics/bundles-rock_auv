@@ -8,11 +8,11 @@ module RockAUV
 
                 def setup_ui(main)
                     super
+
                     warn_zone.hide
                     model_list_group.hide
 
                     sdf_path_browse.connect(SIGNAL('clicked()')) do
-                        SDF::XML.model_path = Bundles.find_dirs('data', 'gazebo', 'models', all: true, order: :specific_first)
                         if file = Qt::FileDialog.get_open_file_name(main, "SDF File", SDF::XML.model_path.first)
                             begin
                                 @thrusters = AUVControlCalibration.sdf_load_thrusters_poses(file)

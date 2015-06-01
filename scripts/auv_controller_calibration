@@ -5,6 +5,9 @@ require 'rock/bundles'
 Bundles.load
 
 require 'rock_auv/auv_control_calibration/ui'
+require 'rock/gazebo'
+
+SDF::XML.model_path = Rock::Gazebo.default_model_path
 app = Qt::Application.new(ARGV)
 
 w = Qt::Widget.new
