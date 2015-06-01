@@ -50,7 +50,8 @@ module RockAUV
                             (Axis.x! | Axis.y!).encoded << Domain.shift_for(:world, :effort) |
                             Axis.roll!.encoded          << Domain.shift_for(:body, :pos) |
                             Axis.roll!.encoded          << Domain.shift_for(:body, :vel) |
-                            Axis.roll!.encoded          << Domain.shift_for(:body, :effort)
+                            Axis.roll!.encoded          << Domain.shift_for(:body, :effort) |
+                            Axis.roll!.encoded          << Domain.shift_for(:body, :thrust)
                         
                         assert_equal expected, result, "expected #{Domain.from_raw(expected, 0)}, got #{Domain.from_raw(result, 0)}"
                     end
@@ -71,7 +72,8 @@ module RockAUV
                             Domain.encode(:aligned, :effort, Axis.x! | Axis.y!) |
                             Domain.encode(:body, :pos, Axis.x! | Axis.y! | Axis.z!) |
                             Domain.encode(:body, :vel, Axis.x! | Axis.y! | Axis.z!) |
-                            Domain.encode(:body, :effort, Axis.x! | Axis.y! | Axis.z!)
+                            Domain.encode(:body, :effort, Axis.x! | Axis.y! | Axis.z!) |
+                            Domain.encode(:body, :thrust, Axis.x! | Axis.y! | Axis.z!)
 
                         expected_aligned_x =
                             Domain.encode(:aligned, :pos, :x) |

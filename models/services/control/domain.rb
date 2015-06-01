@@ -191,6 +191,7 @@ module RockAUV
                 class InvalidReferenceQuantityCombination < ArgumentError; end
                 class InvalidReference < ArgumentError; end
                 REFERENCE_NAMES = SHIFTS.keys.map(&:first).uniq
+                QUANTITY_NAMES  = SHIFTS.keys.map(&:last).sort.uniq
                 class InvalidQuantity < ArgumentError; end
                 QUANTITIES_BY_REFERENCE = Hash.new
                 SHIFTS.each_key do |r, q|
