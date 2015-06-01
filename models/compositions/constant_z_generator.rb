@@ -6,8 +6,6 @@ import_types_from 'auv_control'
 module RockAUV
     module Compositions
         class ConstantZGenerator < Rock::Compositions::ConstantGenerator.for('/base/LinearAngular6DCommand')
-            provides Services::Controller.for { BodyPos(:z) }, as: 'z_producer'
-
             argument :z
 
             def z=(value)

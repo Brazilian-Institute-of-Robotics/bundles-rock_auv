@@ -11,11 +11,15 @@ module RockAUV
                               OroGen::AuvControl::PIDController),
             *Control::Generator::DEFAULT_THRUSTER_CONTROL_RULES]
 
+        class DirectZControlSetpointGenerator < ConstantZGenerator
+            provides Services::Controller.for { WorldPos(:z) }, as: 'z_producer'
+        end
+
         # Composition that provides a direct control of Z, assuming that the
         # system is naturally stable in pitch/roll
         #
         # This is mostly meant to be used during calibration
-        class DirectZControl < Compositions::Control::Generator.new(rules).create(z: ConstantZGenerator)
+        class DirectZControl < Compositions::Control::Generator.new(rules).create(z: DirectZControlSetpointGenerator)
             argument :z
 
             add Rock::Services::ZProvider, as: 'z_samples'
