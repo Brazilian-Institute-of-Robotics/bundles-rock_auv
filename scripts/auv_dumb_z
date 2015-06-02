@@ -10,7 +10,7 @@ Orocos.initialize
 
 z_controller = Orocos::Async.proxy 'auv_control_world_pose2body_effort'
 pose         = Orocos::Async.proxy 'gazebo:underwater:flat_fish'
-syskit = Roby::Interface::Async.new
+syskit = Roby::Interface::Async::Interface.new
 w = RockAUV::AUVControlCalibration::Ui::DumbZController.monitor(pose, z_controller, syskit)
 w.resize 1024,768
 w.show

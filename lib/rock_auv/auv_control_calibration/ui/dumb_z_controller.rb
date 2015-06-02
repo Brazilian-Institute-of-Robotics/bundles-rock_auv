@@ -25,7 +25,7 @@ module RockAUV
                 attr_reader :job_kill_button
 
                 attr_reader :syskit
-                attr_reader :job_id
+                attr_reader :job
 
                 def current_pid_settings
                     pidsettings_widget.get
@@ -95,42 +95,26 @@ module RockAUV
                     syskit.on_reachable do |jobs|
                         job_start_button.enabled = true
                         job_start_button.text = "Go"
-
                         update_syskit_label("REACHABLE", :reachable_color)
-                        update_state_from_syskit(jobs)
                     end
                     syskit.on_unreachable do
                         job_start_button.enabled = false
                         job_start_button.text = "Syskit Unreachable"
-
-                        @job_id = nil
+                        @job = nil
                         update_syskit_label("UNREACHABLE", :unreachable_color)
                     end
-                    connect(job_start_button, SIGNAL(:clicked), self, SLOT(:start_job))
-                    connect(job_kill_button, SIGNAL(:clicked), self, SLOT(:kill_job))
-
-                    syskit.on_job_progress do |state, job_id, job_name, _|
-                        if job_id == self.job_id
-                            update_job_state(state)
+                    syskit.on_job(action_name: syskit_job_name) do |new_job|
+                        puts "ON JOB #{new_job.job_id}"
+                        if !job || job.job_id != new_job
+                            setpoint = new_job.task.action_arguments[:z]
+                            @current_setpoint = setpoint
+                            setpoint_edit.text = setpoint.to_s
+                            monitor_job(new_job)
                         end
                     end
-                end
 
-                def find_existing_job(jobs = syskit.client.jobs)
-                    if j = jobs.find { |_, (_, _, job_task)| job_task.action_model.name == syskit_job_name }
-                        job_id, (job_state, _, job_task) = *j
-                        return job_id, job_state, job_task.action_arguments[:z]
-                    end
-                end
-
-                def update_state_from_syskit(jobs = self.syskit.client.jobs)
-                    job_id, job_state, job_setpoint = find_existing_job
-                    if job_id
-                        @job_id = job_id
-                        @current_setpoint = job_setpoint
-                        setpoint_edit.text = job_setpoint.to_s
-                        update_job_state(job_state)
-                    end
+                    connect(job_start_button, SIGNAL(:clicked), self, SLOT(:start_job))
+                    connect(job_kill_button, SIGNAL(:clicked), self, SLOT(:kill_job))
                 end
 
                 def start_job
@@ -143,29 +127,39 @@ module RockAUV
                         end
 
                     batch = syskit.client.create_batch
-                    if job_id
-                        batch.kill_job(job_id)
+                    if job && job.running?
+                        batch.kill_job(job.job_id)
                     end
                     batch.send("#{syskit_job_name}!", z: @current_setpoint)
-                    @job_id = batch.process.last
+
+                    job = syskit.monitor_job(batch.process.last)
+                    monitor_job(job)
                     emit setpointChanged
                 end
                 slots 'start_job()'
 
+                def monitor_job(new_job)
+                    @job = new_job
+                    new_job.on_progress do
+                        if job == new_job
+                            update_job_state(new_job.state)
+                        end
+                    end
+                    update_job_state(new_job.state)
+                    new_job.start
+                end
+
                 def kill_job
-                    if job_id
-                        syskit.client.kill_job(job_id)
-                        @job_id = nil
-                        # in case there was more than one job running ...
-                        update_state_from_syskit
+                    if job.running?
+                        job.kill
                     end
                 end
                 slots 'kill_job()'
 
                 def update_syskit_label(state, color_name)
                     state_name = state.to_s.upcase
-                    if job_id
-                        state_name += "(ID=#{job_id})"
+                    if job
+                        state_name += "(ID=#{job.job_id})"
                     end
 
                     task_states_widget.update state_name, "syskit:#{syskit_job_name}!",
