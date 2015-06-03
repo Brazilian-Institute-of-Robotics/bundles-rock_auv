@@ -1,3 +1,5 @@
 require "models/compositions/control_cascade"
 require "models/compositions/direct_z_control"
-require "models/compositions/constant_z_generator"
+require "models/compositions/direct_heading_control"
+require "models/compositions/constant_setpoint_generator"
+require "models/compositions/constant_world_pos_z_setpoint_generator"

@@ -128,6 +128,7 @@ module RockAUV
                 def self.roll!; Axis.new.roll! end
 
                 def each
+                    return enum_for(__method__) if !block_given?
                     SHIFTS.each do |name, s|
                         if ((encoded >> s) & 1) == 1
                             yield(name)
