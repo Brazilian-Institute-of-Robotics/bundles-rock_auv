@@ -22,6 +22,17 @@ module RockAUV
                     end
                 end
 
+                describe ".shift_for" do
+                    it "raises InvalidAxis if an invalid axis is given" do
+                        assert_raises(Axis::InvalidAxis) do
+                            Axis.shift_for(:does_not_exist)
+                        end
+                    end
+                    it "returns the shift of the given axis" do
+                        assert_equal 2, Axis.shift_for(:z)
+                    end
+                end
+
                 describe "#only?" do
                     it "returns false if the axis is not controlled" do
                         assert !axis.only?(:x)

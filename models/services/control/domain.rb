@@ -162,6 +162,23 @@ module RockAUV
                     nil
                 end
 
+                # Verifies that this is a simple domain and returns it
+                #
+                # @raise ArgumentError if the domain has one more
+                #   reference/quantity
+                # @return [(Symbol,Symbol,Axis)]
+                def simple_domain
+                    ret = nil
+                    each do |r, q, a|
+                        if ret
+                            raise ArgumentError, "#{self} is not a simple domain"
+                        else
+                            ret = [r, q, a]
+                        end
+                    end
+                    return *ret
+                end
+
                 def hash; encoded.hash end
                 def eql?(p); encoded.eql?(p.encoded) end
                 def ==(p); encoded == p.encoded end
@@ -255,15 +272,18 @@ module RockAUV
 
                     shift = 0
                     while true
-                        while this && (this & 1) == 0
+                        while (this != 0) && (this & 1) == 0
                             this >>= 1
                             shift += 1
                         end
-                        break if !this
+                        break if this == 0
 
                         if (matrix[shift] & other) != 0
                             return true
                         end
+
+                        shift += 1
+                        this >>= 1
                     end
                     false
                 end

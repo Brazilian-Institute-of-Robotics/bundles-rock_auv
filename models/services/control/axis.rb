@@ -108,11 +108,7 @@ module RockAUV
                 end
 
                 def ==(value)
-                    if value.respond_to?(:encoded)
-                        encoded == value.encoded
-                    else
-                        encoded == value
-                    end
+                    encoded == value.encoded
                 end
 
                 def to_s

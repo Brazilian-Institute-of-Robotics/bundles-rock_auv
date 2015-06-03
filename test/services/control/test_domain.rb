@@ -36,6 +36,11 @@ module RockAUV
                         assert_equal Axis.x!, domain.get(:world, :vel)
                         
                     end
+                    it 'raises ArgumentError if given neither 0 nor 3 arguments' do
+                        assert_raises(ArgumentError) do
+                            Domain.new(:world)
+                        end
+                    end
                 end
 
                 describe 'conflict_merge' do
@@ -100,19 +105,17 @@ module RockAUV
 
                 describe "conflicts_with?" do
                     it "returns true if any of the domain parts conflict" do
-                        matrix = Array.new
-                        matrix[3] = 0b00101
+                        matrix = [0, 0, 0b00101]
                         d0 = Domain.from_raw(0b101)
                         d1 = Domain.from_raw(0b00100)
                         assert d0.conflicts_with?(d1, matrix: matrix)
                     end
 
                     it "returns false if none of the domain parts conflict" do
-                        matrix = Array.new
-                        matrix[3] = 0b00101
+                        matrix = [0, 0, 0b00101, 0]
                         d0 = Domain.from_raw(0b1001)
                         d1 = Domain.from_raw(0b00100)
-                        assert d0.conflicts_with?(d1, matrix: matrix)
+                        assert !d0.conflicts_with?(d1, matrix: matrix)
                     end
                 end
 
@@ -145,6 +148,19 @@ module RockAUV
                             Domain.new(:world, :pos, Axis.x!) |
                                 Domain.new(:body, :vel, Axis.z!)
                         end
+                    end
+                end
+
+                describe "#simple_domain" do
+                    it "raises ArgumentError if the domain is not simple" do
+                        domain = Domain.new(:world, :pos, Axis.x!) | Domain.new(:world, :vel, Axis.y!)
+                        assert_raises(ArgumentError) do
+                            domain.simple_domain
+                        end
+                    end
+                    it "returns the reference, quantity and axis of a simple domain" do
+                        domain = Domain.new(:world, :pos, Axis.x! | Axis.y!)
+                        assert_equal [:world, :pos, Axis.x! | Axis.y!], domain.simple_domain
                     end
                 end
             end
