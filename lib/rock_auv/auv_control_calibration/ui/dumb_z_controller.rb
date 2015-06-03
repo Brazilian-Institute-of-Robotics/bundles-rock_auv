@@ -58,15 +58,10 @@ module RockAUV
                     @current_setpoint = setpoint
                     setpoint_edit.text = current_setpoint.to_s
 
-                    connect setpoint_edit, SIGNAL(:returnPressed), self, SLOT(:start_job)
                     connect pidsettings_widget, SIGNAL(:updated), self, SIGNAL(:pidSettingsChanged)
                 end
 
                 signals 'setpointChanged()', 'pidSettingsChanged()'
-
-                def syskit_job_name
-                    "direct_z_control_def"
-                end
 
                 def monitor(position, depth_controller, syskit)
                     @syskit = syskit
@@ -78,6 +73,9 @@ module RockAUV
                         connect PORT(:pose_samples), METHOD(:update_pose)
                     end
 
+                    task_states_widget.update :INIT,
+                        "syskit:direct_z_control_def!",
+                        task_states_widget.unreachable_color
                     task_states_widget.add position
                     task_states_widget.add depth_controller
                     pidsettings_widget.extend Vizkit::QtTypelibExtension
@@ -92,86 +90,58 @@ module RockAUV
                             }
                     end
 
-                    syskit.on_reachable do |jobs|
-                        job_start_button.enabled = true
-                        job_start_button.text = "Go"
-                        update_syskit_label("REACHABLE", :reachable_color)
-                    end
-                    syskit.on_unreachable do
-                        job_start_button.enabled = false
-                        job_start_button.text = "Syskit Unreachable"
-                        @job = nil
-                        update_syskit_label("UNREACHABLE", :unreachable_color)
-                    end
-                    syskit.on_job(action_name: syskit_job_name) do |new_job|
-                        puts "ON JOB #{new_job.job_id}"
-                        if !job || job.job_id != new_job
-                            setpoint = new_job.task.action_arguments[:z]
-                            @current_setpoint = setpoint
-                            setpoint_edit.text = setpoint.to_s
-                            monitor_job(new_job)
+                    syskit.connect_to_ui(self) do
+                        on_reachable do |jobs|
+                            job_start_button.enabled = true
+                            job_start_button.text = "Go"
+                        end
+                        on_unreachable do
+                            job_start_button.enabled = false
+                            job_start_button.text = "Syskit Unreachable"
+                        end
+
+                        job = direct_z_control_def!
+                        connect job_start_button, SIGNAL(:clicked), START(job), restart: true
+                        connect job_kill_button, SIGNAL(:clicked), KILL(job)
+                        connect widget, SIGNAL('setpointChanged(float)'), ARGUMENT(job, :z)
+                        connect PROGRESS(job) do |j|
+                            update_job_state(j)
                         end
                     end
 
-                    connect(job_start_button, SIGNAL(:clicked), self, SLOT(:start_job))
-                    connect(job_kill_button, SIGNAL(:clicked), self, SLOT(:kill_job))
+                    connect setpoint_edit, SIGNAL('editingFinished()'), self, SLOT(:read_current_setpoint)
                 end
 
-                def start_job
-                    @current_setpoint =
-                        begin
-                            Float(setpoint_edit.text)
-                        rescue ArgumentError
-                            Qt::MessageBox.critical(self, "Job Start", "Setpoint value not a numerical value (#{setpoint_edit.text})")
-                            return
-                        end
-
-                    batch = syskit.client.create_batch
-                    if job && job.running?
-                        batch.kill_job(job.job_id)
+                def read_current_setpoint
+                    begin
+                        @current_setpoint = Float(setpoint_edit.text)
+                    rescue ArgumentError
+                        Qt::MessageBox.critical(self, "Job Start", "Setpoint value not a numerical value (#{setpoint_edit.text})")
+                        setpoint_edit.style_sheet = "QLineEdit { background: rgb(255,200,200); };"
+                        return
                     end
-                    batch.send("#{syskit_job_name}!", z: @current_setpoint)
 
-                    job = syskit.monitor_job(batch.process.last)
-                    monitor_job(job)
-                    emit setpointChanged
+                    setpoint_edit.style_sheet = ""
+                    emit setpointChanged(current_setpoint)
                 end
-                slots 'start_job()'
+                slots 'read_current_setpoint()'
+                signals 'setpointChanged(float)'
 
-                def monitor_job(new_job)
-                    @job = new_job
-                    new_job.on_progress do
-                        if job == new_job
-                            update_job_state(new_job.state)
-                        end
-                    end
-                    update_job_state(new_job.state)
-                    new_job.start
-                end
-
-                def kill_job
-                    if job.running?
-                        job.kill
-                    end
-                end
-                slots 'kill_job()'
-
-                def update_syskit_label(state, color_name)
+                def update_job_state(job)
+                    state = job.state
                     state_name = state.to_s.upcase
-                    if job
+                    if state == :unreachable
+                        color = task_states_widget.unreachable_color
+                    elsif state == :reachable || Roby::Interface.terminal_state?(job.state)
+                        color = task_states_widget.reachable_color
+                    else
+                        color = task_states_widget.running_color
                         state_name += "(ID=#{job.job_id})"
                     end
 
-                    task_states_widget.update state_name, "syskit:#{syskit_job_name}!",
-                        task_states_widget.send(color_name)
-                end
-
-                def update_job_state(state)
-                    if Roby::Interface.terminal_state?(state)
-                        update_syskit_label(state, :reachable_color)
-                    else
-                        update_syskit_label(state, :running_color)
-                    end
+                    task_states_widget.update state_name,
+                        "syskit:#{job.action_name}!",
+                        color
                 end
 
                 def update_pid_state(state)
