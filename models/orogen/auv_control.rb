@@ -28,12 +28,47 @@ class OroGen::AuvControl::Base
         roll: [:angular, 2]
     ]
 
-    # Customizes the configuration step.
+    # Add an input controlled system service and returns the corresponding model
     #
-    # The orocos task is available from orocos_task
+    # @param [RockAUV::Services::Domain,nil] domain the domain object. Can also
+    #   be provided by a block which would be passed to
+    #   {RockAUV::Services::ControlledSystem.for}
+    # @param [String] as the service name
+    # @return [Model<Component>] the component model that has the corresponding
+    #   service. It might not be self.
+    def self.add_input(domain = nil, as: nil, &domain_def)
+        model = ensure_model_is_specialized
+        controlled_system_srv = RockAUV::Services::ControlledSystem.for(domain, &domain_def)
+        r, q, _ = controlled_system_srv.domain.simple_domain
+        model.require_dynamic_service(
+            "in_#{r}_#{q}", as: as,
+            control_domain_srv: controlled_system_srv)
+        model
+    end
+
+    # Defines all or part of the output domain, and returns the corresponding
+    # model
     #
-    # The call to super here applies the configuration on the orocos task. If
-    # you need to override properties, do it afterwards
+    # @param [RockAUV::Services::Domain,nil] domain the domain object. Can also
+    #   be provided by a block which would be passed to
+    #   {RockAUV::Services::Controller.for}
+    # @param [String] as the service name
+    # @return [Model<Component>] the component model that has the corresponding
+    #   service. It might not be self.
+    def self.add_output(domain = nil, as: nil, &domain_def)
+        model = ensure_model_is_specialized
+        controller_srv = RockAUV::Services::Controller.for(domain, &domain_def)
+        r, q, _ = controller_srv.domain.simple_domain
+        model.require_dynamic_service(
+            "out_#{r}_#{q}", as: as,
+            control_domain_srv: controller_srv)
+        model
+    end
+
+    # Sets up the controller according to which services have been instanciated.
+    #
+    # It sets all the relevant configuration properties accordingly
+    # (expected_inputs, ...)
     def configure
         super
 
@@ -60,8 +95,18 @@ class OroGen::AuvControl::Base
     end
 
     def self.each_dynamic_controlled_system_service
+        return enum_for(__method__) if !block_given?
         each_required_dynamic_service do |srv|
             if srv.model <= RockAUV::Services::ControlledSystem
+                yield(srv)
+            end
+        end
+    end
+
+    def self.each_dynamic_controller_service
+        return enum_for(__method__) if !block_given?
+        each_required_dynamic_service do |srv|
+            if srv.model <= RockAUV::Services::Controller
                 yield(srv)
             end
         end
@@ -102,7 +147,6 @@ class OroGen::AuvControl::Base
     end
 end
 
-
 class OroGen::AuvControl::PIDController
     # Customizes the configuration step.
     #
@@ -111,10 +155,44 @@ class OroGen::AuvControl::PIDController
     # The call to super here applies the configuration on the orocos task. If
     # you need to override properties, do it afterwards
     #
+    # Sets up the controller according to which services have been instanciated.
+    #
+    # It sets all the relevant configuration properties, that are not already
+    # set by {ControllerBase#configure} (world_frame, position_control, ...)
     def configure
         super
         orocos_task.world_frame = self.model.world_frame?
         orocos_task.position_control = self.model.position_control?
+    end
+
+    def self.full_input_domain
+        each_dynamic_controlled_system_service.
+            inject(RockAUV::Services::Control::Domain.new) do |d, srv|
+                d | srv.model.domain
+            end
+    end
+
+    def self.full_output_domain
+        each_dynamic_controller_service.
+            inject(RockAUV::Services::Control::Domain.new) do |d, srv|
+                d | srv.model.domain
+            end
+    end
+
+    # Tests whether two controllers can be merged
+    #
+    # In addition to the normal Syskit checks, it checks that the controller's
+    # input domains are compatible
+    def can_merge?(other_task)
+        super && model.can_merge?(other_task.model)
+    end
+
+    def self.can_merge?(other_task)
+        return if !super
+
+        this_domain  = full_input_domain
+        other_domain = other_task.full_input_domain
+        !this_domain.conflicts_with?(other_domain)
     end
 end
 

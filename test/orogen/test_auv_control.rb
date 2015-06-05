@@ -119,6 +119,41 @@ module OroGen
                     assert_raises(Roby::MissionFailedError) { deploy_and_configure(model) }
                 end
             end
+
+            describe "#can_merge?" do
+                it "returns true if the input domains are compatible" do
+                    left  = PIDController.add_input(as: 'depth') { WorldPos(:z) }
+                    right = PIDController.add_input(as: 'heading') { WorldPos(:yaw) }
+                    assert left.can_merge?(right)
+                end
+
+                it "returns false if the input domains are not compatible" do
+                    left  = PIDController.add_input(as: 'depth') { WorldPos(:y) }
+                    right = PIDController.add_input(as: 'forward') { WorldPos(:x) }
+                    assert !left.can_merge?(right)
+                end
+            end
+
+            describe "#merge" do
+                it "has a full input domain which is the union of the two" do
+                    left_m  = PIDController.add_input(as: 'depth') { WorldPos(:z) }
+                    right_m = PIDController.add_input(as: 'heading') { WorldPos(:yaw) }
+                    plan.add(left = left_m.new)
+                    plan.add(right = right_m.new)
+                    left.merge(right)
+                    assert_equal (RockAUV::Services::Control.Domain { WorldPos(:z,:yaw) }),
+                        left.model.full_input_domain
+                end
+                it "has a full output domain which is the union of the two" do
+                    left_m = PIDController.add_output(as: :body_effort_z) { BodyEffort(:z) }
+                    right_m = PIDController.add_output(as: :body_effort_heading) { BodyEffort(:yaw) }
+                    plan.add(left = left_m.new)
+                    plan.add(right = right_m.new)
+                    left.merge(right)
+                    assert_equal (RockAUV::Services::Control.Domain { BodyEffort(:z,:yaw) }),
+                        left.model.full_output_domain
+                end
+            end
         end
 
         #describe BasePIDController do
