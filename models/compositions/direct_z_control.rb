@@ -8,13 +8,13 @@ module RockAUV
         # system is naturally stable in pitch/roll
         #
         # This is mostly meant to be used during calibration
-        class DirectZControl < Compositions::Control::Generator.new(DIRECT_CONTROL_RULES).create(setpoint: ConstantWorldPosZSetpointGenerator)
+        class DirectZControl < Compositions::Control::Generator.new(DIRECT_CONTROL_RULES).create(world_pos_z: ConstantWorldPosZSetpointGenerator)
             argument :z
 
             add Rock::Services::ZProvider, as: 'z_samples'
             z_samples_child.connect_to world_pos2body_effort_child
 
-            overload 'setpoint', setpoint_child.
+            overload 'world_pos_z', world_pos_z_child.
                 with_arguments(setpoint: from(:parent_task).z)
         end
     end

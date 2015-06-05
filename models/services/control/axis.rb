@@ -111,6 +111,11 @@ module RockAUV
                     encoded == value.encoded
                 end
 
+                def compact_name
+                    SHIFTS.map { |name, shift| name.to_s if (encoded & (1 << shift) != 0) }.
+                        compact.join("")
+                end
+
                 def to_s
                     SHIFTS.map { |name, shift| name.to_s if (encoded & (1 << shift) != 0) }.
                         compact.join(",")

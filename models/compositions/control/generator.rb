@@ -86,10 +86,10 @@ module RockAUV
                                 end
                                 break
                             end
-                            new_axis, new_producer = self.class.apply_rule(result, rule, resolved_producers)
+                            new_name, new_axis, new_producer = self.class.apply_rule(result, rule, resolved_producers)
 
                             producers_by_domains[rule.target_domain] ||= Array.new
-                            producers_by_domains[rule.target_domain] << Producer.new(rule.name, rule.target_domain, new_axis, new_producer)
+                            producers_by_domains[rule.target_domain] << Producer.new(new_name, rule.target_domain, new_axis, new_producer)
                         end
                     end
 
@@ -166,13 +166,18 @@ module RockAUV
                     if !output_srv
                         raise NotImplementedError, "no controller service defined for #{reference} #{quantity}"
                     end
-                    convertion_m.require_dynamic_service(
+
+                    out_name = "#{reference}_#{quantity}_#{new_axis.compact_name}"
+                    convertion_srv = convertion_m.require_dynamic_service(
                         "out_#{reference}_#{quantity}",
-                        as: 'cmd',
+                        as: out_name,
                         control_domain_srv: Services::Controller.for(Services::Control::Domain.new(reference, quantity, new_axis)))
 
-                    convertion_m = convertion_m.prefer_deployed_tasks("auv_control_#{in_reference}_#{in_quantity}2#{reference}_#{quantity}")
-                    convertion_child = composition_m.add convertion_m, :as => rule.name
+                    convertion_name = "#{in_reference}_#{in_quantity}2#{reference}_#{quantity}"
+                    convertion_m = convertion_m.
+                        prefer_deployed_tasks("auv_control_#{convertion_name}").
+                        with_conf(convertion_name, 'default')
+                    convertion_child = composition_m.add convertion_m, as: convertion_name
                     producer_pairs.each do |p, srv|
                         child_srv = convertion_child.find_data_service(srv.name)
                         p.bound_service.connect_to child_srv
@@ -183,7 +188,7 @@ module RockAUV
                         end
                     end
 
-                    return new_axis, convertion_child.cmd_srv
+                    return convertion_srv.name, new_axis, convertion_child.find_data_service(convertion_srv.name)
                 end
             end
         end

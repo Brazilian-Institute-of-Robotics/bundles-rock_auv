@@ -8,13 +8,13 @@ module RockAUV
         # system is naturally stable in pitch/roll
         #
         # This is mostly meant to be used during calibration
-        class DirectYawControl < Compositions::Control::Generator.new(DIRECT_CONTROL_RULES).create(setpoint: ConstantWorldPosYawSetpointGenerator)
+        class DirectYawControl < Compositions::Control::Generator.new(DIRECT_CONTROL_RULES).create(world_pos_yaw: ConstantWorldPosYawSetpointGenerator)
             argument :yaw
 
             add Rock::Services::Orientation, as: 'orientation_samples'
             orientation_samples_child.connect_to world_pos2body_effort_child
 
-            overload 'setpoint', setpoint_child.
+            overload 'world_pos_yaw', world_pos_yaw_child.
                 with_arguments(setpoint: from(:parent_task).yaw)
         end
     end
