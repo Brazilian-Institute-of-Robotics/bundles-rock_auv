@@ -15,7 +15,7 @@ module RockAUV
             # @return [Hash]
             argument :setpoint
 
-            AXIS_NAMES = Array[:x, :y, :z, :yaw, :pitch, :roll]
+            AXIS_NAMES = Array[:x, :y, :z, :roll, :pitch, :yaw]
 
             def setpoint=(hash)
                 expected_domain = model.domain_srv.model.domain
