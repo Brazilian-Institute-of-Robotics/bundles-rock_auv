@@ -327,6 +327,10 @@ module RockAUV
                 CONFLICTS_MATRIX = build_conflict_matrix(CONFLICTS)
 
             end
+
+            def self.Domain(&block)
+                DSL.eval(&block)
+            end
         end
     end
 end
