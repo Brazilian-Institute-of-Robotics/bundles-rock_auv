@@ -133,6 +133,11 @@ module RockAUV
 
                         assert_equal (Axis.x! | Axis.y!), domain.get(:world, :pos)
                     end
+                    it "is identity when merging with an empty domain" do
+                        domain = Domain.new(:world, :pos, Axis.x!)
+                        assert_equal domain, (domain | Domain.new)
+                        assert_equal domain, (Domain.new | domain)
+                    end
                     it "raises IncompatibleDomains if the two domains are controlling same part of the control space" do
                         assert_raises(Domain::IncompatibleDomains) do
                             Domain.new(:world, :pos, Axis.x!) |

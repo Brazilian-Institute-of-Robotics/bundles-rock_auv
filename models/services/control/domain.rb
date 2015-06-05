@@ -60,13 +60,14 @@ module RockAUV
                 #   @param [Axis,Symbol] axis the axis being controlled. One of
                 #     :x, :y, :z, :yaw, :pitch, :roll
                 def initialize(*args)
-                    @encoded = 0
+                    encoded = 0
                     if !args.empty?
                         if args.size != 3
                             raise ArgumentError, "expected no arguments or 3, got #{args.size}"
                         end
-                        raw_set(Domain.encode(*args))
+                        encoded = Domain.encode(*args)
                     end
+                    raw_set(encoded)
                 end
 
                 # @api private
