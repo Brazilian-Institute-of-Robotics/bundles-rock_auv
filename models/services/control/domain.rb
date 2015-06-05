@@ -184,7 +184,7 @@ module RockAUV
                 def eql?(p); encoded.eql?(p.encoded) end
                 def ==(p); encoded == p.encoded end
                 def to_s
-                    SHIFTS.map do |(reference,domain),shift|
+                    this = SHIFTS.map do |(reference,domain),shift|
                         encoded_axis = (encoded >> shift) & Axis::MASK
                         if encoded_axis != 0
                             reference.to_s.capitalize  +
@@ -192,6 +192,12 @@ module RockAUV
                                 "(#{Axis.from_raw(encoded >> shift)})"
                         end
                     end.compact.join("|")
+                end
+
+                def inspect
+                    this = to_s
+                    conflicts = Domain.from_raw(self.conflicts).to_s
+                    "RockAUV::Services::Control::Domain { #{this} conflicts=#{conflicts} }"
                 end
 
                 SHIFTS = Hash[
