@@ -12,7 +12,7 @@ module RockAUV
 
         WorldPosControlledSystem  = Control::WorldPos.new_submodel do
             provides ControlledSystem
-            input_port 'cmd_in', '/base/LinearAngular6DCommand'
+            input_port 'cmd_in_world_pos', '/base/LinearAngular6DCommand'
         end
         WorldVelControlledSystem  = Control::WorldVel.new_submodel do
             provides ControlledSystem
