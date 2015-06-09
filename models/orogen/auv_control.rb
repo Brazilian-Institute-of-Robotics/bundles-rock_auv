@@ -129,6 +129,10 @@ class OroGen::AuvControl::Base
         each_required_dynamic_service do |srv|
             # There is only one out service
             next if srv.model.dynamic_service.name =~ /^out/
+            # Do not consider services that are not connected to anything (the
+            # task implementation silently ignores them as well)
+            next if !srv.each_input_port.any? { |p| p.connected? }
+
             orocos_task.addCommandInput("in_#{srv.name}", 0)
 
             # 'srv' is the data service bound to this instance
