@@ -1,20 +1,56 @@
 require 'models/services/controller'
 require 'models/services/controlled_system'
 
+# Generic handling of controller input/output typing
+#
+# Creating and Typing Inputs and Outputs
+# --------------------------------------
+# auv_control-based controllers are "typed" in which part of the control domain
+# their input is expressed, and which part of the control domain their output
+# is. One creates dynamic inputs with {.add_input} and types the controller's
+# output with {.add_output}
+#
+# Input/Output Typing Using Dynamic Services
+# ------------------------------------------
+# Under the scene, the {.add_input} and {.add_output} helpers use dynamic
+# services. One dynamic service for each reference/quantity pair has been
+# declared on this task model, both on inputs and outputs.
+#
+# For instance, if one needs to instanciate an aligned-velocity input, he would
+# use the 'in_aligned_velocity' service. The service would in turn create the
+# "cmd_in_#{name}" port, where name is the name of the instanciated service (the
+# argument to the 'as' option)
+#
+# On the output side, the goal is more to provide typing for the output (as all
+# controllers only have one output). If the controller generates in the
+# body-effort domain, one would instanciate a 'out_aligned_velocity' service.
+# The service's output port would in turn be mapped to the task's cmd_out port.
+#
+# In both cases, the dynamic services expect a control_domain_srv option with
+# the data service representing the full control domain (reference, quantity and
+# axis).
+#
+# @example create an input in body-position-Z
+#   domain_srv = RockAUV::Services::Control::Domain { BodyPosition(:z) }
+#   task_model.require_dynamic_service 'in_body_position', as: 'depth',
+#       control_domain_srv: domain_srv
 class OroGen::AuvControl::Base
-    Hash['in' => RockAUV::Services::ControlledSystem::REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS, 'out' => RockAUV::Services::Controller::REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS].each do |prefix, srv_sets|
-        srv_sets.each do |reference, quantities|
-            quantities.each do |quantity, srv|
-                dynamic_service srv, as: "#{prefix}_#{reference}_#{quantity}" do
-                    actual_port_name =
-                        if prefix == 'in'
-                            "cmd_in_#{name}"
-                        else
-                            "cmd_out"
-                        end
+    RockAUV::Services::ControlledSystem::REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS.each do |reference, quantities|
+        quantities.each do |quantity, srv|
+            dynamic_service srv, as: "in_#{reference}_#{quantity}" do
+                actual_port_name = "cmd_in_#{name}"
+                provides options[:control_domain_srv], as: name,
+                    "cmd_in_#{reference}_#{quantity}" => actual_port_name
+                component_model.find_port(actual_port_name).orogen_model.static
+            end
+        end
+    end
 
-                    provides options[:control_domain_srv], as: name, "cmd_#{prefix}_#{reference}_#{quantity}" => actual_port_name
-                end
+    RockAUV::Services::Controller::REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS.each do |reference, quantities|
+        quantities.each do |quantity, srv|
+            dynamic_service srv, as: "out_#{reference}_#{quantity}" do
+                provides options[:control_domain_srv], as: name,
+                    "cmd_out_#{reference}_#{quantity}" => "cmd_out"
             end
         end
     end
@@ -28,14 +64,22 @@ class OroGen::AuvControl::Base
         roll: [:angular, 2]
     ]
 
-    # Add an input controlled system service and returns the corresponding model
+    # Adds a controller input within the given control domain
+    #
+    # It creates a new task port called 'cmd_in_#{as}'
     #
     # @param [RockAUV::Services::Domain,nil] domain the domain object. Can also
     #   be provided by a block which would be passed to
     #   {RockAUV::Services::ControlledSystem.for}
-    # @param [String] as the service name
+    # @param [String] as the service name. The created input port will be called
+    #   "cmd_in_#{as}"
     # @return [Model<Component>] the component model that has the corresponding
     #   service. It might not be self.
+    #
+    # @example create world-pos-Z input called 'depth'
+    #   model = PIDController.add_input(as: 'depth') { WorldPos(:z) }
+    #
+    # @see add_output
     def self.add_input(domain = nil, as: nil, &domain_def)
         model = ensure_model_is_specialized
         controlled_system_srv = RockAUV::Services::ControlledSystem.for(domain, &domain_def)
@@ -46,8 +90,10 @@ class OroGen::AuvControl::Base
         model
     end
 
-    # Defines all or part of the output domain, and returns the corresponding
-    # model
+    # Defines all or part of the output domain
+    #
+    # Unlike with {.add_input}, no dynamic ports get created. All controllers
+    # have a single cmd_out output port.
     #
     # @param [RockAUV::Services::Domain,nil] domain the domain object. Can also
     #   be provided by a block which would be passed to
@@ -55,6 +101,11 @@ class OroGen::AuvControl::Base
     # @param [String] as the service name
     # @return [Model<Component>] the component model that has the corresponding
     #   service. It might not be self.
+    #
+    # @example declare that the controller outputs in body-effort-yaw
+    #   model = PIDController.add_output(as: 'yaw') { BodyEffort(:yaw) }
+    #
+    # @see .add_input
     def self.add_output(domain = nil, as: nil, &domain_def)
         model = ensure_model_is_specialized
         controller_srv = RockAUV::Services::Controller.for(domain, &domain_def)
