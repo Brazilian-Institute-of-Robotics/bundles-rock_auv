@@ -59,9 +59,9 @@ class OroGen::AuvControl::Base
         x: [:linear, 0],
         y: [:linear, 1],
         z: [:linear, 2],
-        yaw: [:angular, 0],
+        roll: [:angular, 0],
         pitch: [:angular, 1],
-        roll: [:angular, 2]
+        yaw: [:angular, 2]
     ]
 
     # Adds a controller input within the given control domain
