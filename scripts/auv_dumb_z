@@ -8,10 +8,12 @@ require 'rock_auv/auv_control_calibration/ui'
 require 'rock_auv/auv_control_calibration/ui/dumb_z_controller'
 Orocos.initialize
 
+Roby.make_own_logger Logger::DEBUG
+
 z_controller = Orocos::Async.proxy 'auv_control_world_pose2body_effort'
 pose         = Orocos::Async.proxy 'gazebo:underwater:flat_fish'
 syskit = Roby::Interface::Async::Interface.new
-w = RockAUV::AUVControlCalibration::Ui::DumbZController.monitor(pose, z_controller, syskit)
+w = RockAUV::AUVControlCalibration::Ui::DumbZController.new(syskit)
 w.resize 1024,768
 w.show
 
@@ -20,5 +22,6 @@ syskit_poll.connect(SIGNAL('timeout()')) do
     syskit.poll
 end
 syskit_poll.start(10)
+
 Vizkit.exec
 
