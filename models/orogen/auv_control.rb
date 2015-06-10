@@ -297,12 +297,23 @@ class OroGen::AuvControl::PIDController
         super && model.can_merge?(other_task.model)
     end
 
-    def self.can_merge?(other_task)
+    # Tests whether a +model+ can be merged into +self+
+    #
+    # It verifies that the merge is valid w.r.t. the controlled domains
+    def self.can_merge?(model)
         return if !super
 
+        # Check for services in other_task that are not in self and verify that
+        # adding them to self would not cause a conflict
+        #
+        # Note that the superclass' can_merge? implementation already tests that
+        # services that have the same name are from the same type, so we only
+        # have to test for the service presence on self
         this_domain  = full_input_domain
-        other_domain = other_task.full_input_domain
-        !this_domain.conflicts_with?(other_domain)
+        model.each_dynamic_controlled_system_service.all? do |srv|
+            find_data_service(srv.name) ||
+                !this_domain.conflicts_with?(srv.model.domain)
+        end
     end
 end
 

@@ -29,7 +29,7 @@ module OroGen
                     task = deploy_and_configure(model)
                     expected = task.orocos_task.expected_inputs
                     assert_equal [false, false, true], expected.linear.to_a
-                    assert_equal [true, false, false], expected.angular.to_a
+                    assert_equal [false, false, true], expected.angular.to_a
                 end
             end
 
@@ -131,6 +131,13 @@ module OroGen
                     left  = PIDController.add_input(as: 'depth') { WorldPos(:y) }
                     right = PIDController.add_input(as: 'forward') { WorldPos(:x) }
                     assert !left.can_merge?(right)
+                end
+
+                it "only compares the disjoint parts of the domain" do
+                    left  = PIDController.add_input(as: 'depth') { WorldPos(:y) }
+                    right = PIDController.add_input(as: 'heading') { WorldPos(:yaw) }
+                    right.add_input(as: 'depth') { WorldPos(:y) }
+                    assert left.can_merge?(right)
                 end
             end
 
