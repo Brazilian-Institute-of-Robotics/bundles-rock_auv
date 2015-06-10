@@ -202,7 +202,7 @@ class OroGen::AuvControl::Base
     end
 end
 
-class OroGen::AuvControl::PIDController
+class OroGen::AuvControl::BasePIDController
     # Customizes the configuration step.
     #
     # The orocos task is available from orocos_task
@@ -210,6 +210,12 @@ class OroGen::AuvControl::PIDController
     # The call to super here applies the configuration on the orocos task. If
     # you need to override properties, do it afterwards
     #
+    # def configure
+    #     super
+    # end
+end
+
+class OroGen::AuvControl::PIDController
     # Sets up the controller according to which services have been instanciated.
     #
     # It sets all the relevant configuration properties, that are not already
@@ -264,3 +270,96 @@ class OroGen::AuvControl::WorldToAligned
         orocos_task.position_control = self.model.position_control?
     end
 end
+
+class OroGen::AuvControl::AlignedToBody
+    # Customizes the configuration step.
+    #
+    # The orocos task is available from orocos_task
+    #
+    # The call to super here applies the configuration on the orocos task. If
+    # you need to override properties, do it afterwards
+    #
+    # def configure
+    #     super
+    # end
+end
+
+class OroGen::AuvControl::AccelerationController
+    # Customizes the configuration step.
+    #
+    # The orocos task is available from orocos_task
+    #
+    # The call to super here applies the configuration on the orocos task. If
+    # you need to override properties, do it afterwards
+    #
+    # def configure
+    #     super
+    # end
+end
+
+class OroGen::AuvControl::ConstantCommand
+    # Customizes the configuration step.
+    #
+    # The orocos task is available from orocos_task
+    #
+    # The call to super here applies the configuration on the orocos task. If
+    # you need to override properties, do it afterwards
+    #
+    # def configure
+    #     super
+    # end
+end
+
+class OroGen::AuvControl::ConstantCommandGroundFollower
+    # Customizes the configuration step.
+    #
+    # The orocos task is available from orocos_task
+    #
+    # The call to super here applies the configuration on the orocos task. If
+    # you need to override properties, do it afterwards
+    #
+    # def configure
+    #     super
+    # end
+end
+
+class OroGen::AuvControl::WaypointNavigator
+    # Customizes the configuration step.
+    #
+    # The orocos task is available from orocos_task
+    #
+    # The call to super here applies the configuration on the orocos task. If
+    # you need to override properties, do it afterwards
+    #
+    # def configure
+    #     super
+    # end
+end
+
+class OroGen::AuvControl::MotionCommand2DConverter
+    # Customizes the configuration step.
+    #
+    # The orocos task is available from orocos_task
+    #
+    # The call to super here applies the configuration on the orocos task. If
+    # you need to override properties, do it afterwards
+    #
+    # def configure
+    #     super
+    # end
+end
+
+class OroGen::AuvControl::OptimalHeadingController
+    # Customizes the configuration step.
+    #
+    # The orocos task is available from orocos_task
+    #
+    # The call to super here applies the configuration on the orocos task. If
+    # you need to override properties, do it afterwards
+    #
+    # def configure
+    #     super
+    # end
+end
+
+
