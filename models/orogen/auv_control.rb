@@ -37,18 +37,17 @@ require 'models/services/controlled_system'
 class OroGen::AuvControl::Base
     RockAUV::Services::ControlledSystem::REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS.each do |reference, quantities|
         quantities.each do |quantity, srv|
-            dynamic_service srv, as: "in_#{reference}_#{quantity}" do
+            dynamic_service srv, as: "in_#{reference}_#{quantity}", dynamic: true, remove_when_unused: false do
                 actual_port_name = "cmd_in_#{name}"
                 provides options[:control_domain_srv], as: name,
                     "cmd_in_#{reference}_#{quantity}" => actual_port_name
-                component_model.find_port(actual_port_name).orogen_model.static
             end
         end
     end
 
     RockAUV::Services::Controller::REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS.each do |reference, quantities|
         quantities.each do |quantity, srv|
-            dynamic_service srv, as: "out_#{reference}_#{quantity}" do
+            dynamic_service srv, as: "out_#{reference}_#{quantity}", dynamic: true, remove_when_unused: false do
                 provides options[:control_domain_srv], as: name,
                     "cmd_out_#{reference}_#{quantity}" => "cmd_out"
             end
@@ -122,18 +121,69 @@ class OroGen::AuvControl::Base
     # (expected_inputs, ...)
     def configure
         super
+        update_expected_inputs
+        each_dynamic_controlled_system_service do |srv|
+            orocos_task.addCommandInput("in_#{srv.name}", 0)
+        end
+    end
 
-        expected_in = Types.auv_control.ExpectedInputs.new
-        expected_in.zero!
+    # Hook called when a new dynamic service is created on an already configured
+    # task
+    #
+    # It calls addCommandInput on the new service, expected_inputs gets updated
+    # by {#added_input_port_connection} and {#removed_input_port_connection}
+    def added_dynamic_service(srv)
+        super
 
+        update_expected_inputs
+
+        if setup? && srv.model.fullfills?(RockAUV::Services::ControlledSystem)
+            orocos_task.addCommandInput("in_#{srv.name}", 0)
+        end
+        srv
+    end
+
+    # Hook called by Syskit at runtime when connections have been added
+    #
+    # It is called just after adding the connection
+    #
+    # @param [Syskit::Port] source_port
+    # @param [Syskit::Port] sink_port
+    # @param [Hash] policy
+    def added_input_port_connection(source_port, sink_port, policy)
+        super
+        update_expected_inputs
+    end
+
+    # Hook called by Syskit at runtime when connections have been removed
+    #
+    # It is called just after removing the connection
+    #
+    # @param [Orocos::TaskContext] source_task
+    # @param [String] source_port
+    # @param [String] sink_port
+    def removed_input_port_connection(source_task, source_port, sink_port)
+        super
+        update_expected_inputs
+    end
+
+    # Enumerates every instanciated dynamic input service
+    def each_dynamic_controlled_system_service
         each_required_dynamic_service do |srv|
             # There is only one out service
-            next if srv.model.dynamic_service.name =~ /^out/
+            next if !srv.model.fullfills?(RockAUV::Services::ControlledSystem)
+
+            yield(srv)
+        end
+    end
+
+    def update_expected_inputs
+        expected_in = Types.auv_control.ExpectedInputs.new
+        expected_in.zero!
+        each_dynamic_controlled_system_service do |srv|
             # Do not consider services that are not connected to anything (the
             # task implementation silently ignores them as well)
             next if !srv.each_input_port.any? { |p| p.connected? }
-
-            orocos_task.addCommandInput("in_#{srv.name}", 0)
 
             # 'srv' is the data service bound to this instance
             # srv.model is the data service bound to this instance's model
@@ -145,7 +195,6 @@ class OroGen::AuvControl::Base
                 end
             end
         end
-
         orocos_task.expected_inputs = expected_in
     end
 
