@@ -8,3 +8,7 @@ require "test/compositions/test_constant_world_pos_yaw_setpoint_generator"
 
 
 
+
+require "test/compositions/test_direct_pitch_control"
+
+require "test/compositions/test_constant_world_pos_pitch_setpoint_generator"

@@ -1,6 +1,7 @@
 require 'rock/models/services/orientation'
 require 'models/compositions/direct_z_control'
 require 'models/compositions/direct_yaw_control'
+require 'models/compositions/direct_pitch_control'
 
 module RockAUV
     module Profiles
@@ -29,6 +30,10 @@ module RockAUV
             # assumes that the system is keeping horizontal (most AUVs will do
             # that naturally), and keeps its yaw constant
             define 'direct_yaw_control', Compositions::DirectYawControl.
+                use(thrusters_tag, orientation_samples_tag)
+
+            # Direct pitch control. Uses only a yaw sensor
+            define 'direct_pitch_control', Compositions::DirectPitchControl.
                 use(thrusters_tag, orientation_samples_tag)
         end
     end

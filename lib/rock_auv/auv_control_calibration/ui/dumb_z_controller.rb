@@ -44,6 +44,17 @@ module RockAUV
                                    lambda { |rad| Integer(rad * 180 / Math::PI) },
                                    lambda { |deg| Float(deg) * Math::PI / 180 },
                                    lambda { |settings, value| settings.angular[2] = value }),
+                    Controller.new('Pitch',
+                                   "direct_pitch_control_def",
+                                   :pitch,
+                                   'auv_control_world_pose2body_effort',
+                                   'gazebo:underwater:flat_fish',
+                                   'pose_samples',
+                                   lambda { |pose| [pose.time, pose.orientation.pitch] },
+                                   '%i',
+                                   lambda { |rad| Integer(rad * 180 / Math::PI) },
+                                   lambda { |deg| Float(deg) * Math::PI / 180 },
+                                   lambda { |settings, value| settings.angular[0] = value })
                 ]
 
                 def initialize(syskit, parent = nil, setpoint: 0)
