@@ -15,9 +15,12 @@ module RockAUV
                 attr_reader :controllers_layout
                 attr_reader :controller_status_tabs
 
+                attr_reader :controller_tasks
+
                 Controller = Struct.new :name, :job_name, :job_argument_name,
                     :controller_task_name, :feedback_task_name, :feedback_port, :feedback_getter,
-                    :format, :SI_to_ui, :ui_to_SI
+                    :format, :SI_to_ui, :ui_to_SI,
+                    :update_pid_settings
 
                 CONTROLLERS = [
                     Controller.new('Z', "direct_z_control_def",
@@ -28,7 +31,8 @@ module RockAUV
                                    lambda { |pose| [pose.time, pose.position.z] },
                                    '%.2g',
                                    lambda { |z| z },
-                                   lambda { |z| z }),
+                                   lambda { |z| z },
+                                   lambda { |settings, value| settings.linear[2] = value }),
                     Controller.new('Yaw',
                                    "direct_yaw_control_def",
                                    :yaw,
@@ -38,11 +42,14 @@ module RockAUV
                                    lambda { |pose| [pose.time, pose.orientation.yaw] },
                                    '%i',
                                    lambda { |rad| Integer(rad * 180 / Math::PI) },
-                                   lambda { |deg| Float(deg) * Math::PI / 180 })
+                                   lambda { |deg| Float(deg) * Math::PI / 180 },
+                                   lambda { |settings, value| settings.angular[2] = value }),
                 ]
 
                 def initialize(syskit, parent = nil, setpoint: 0)
                     super(parent)
+
+                    Orocos.load_typekit 'auv_control'
 
                     @syskit = syskit
                     @ui = Vizkit.default_loader.load(File.expand_path('auv_calibration.ui', File.dirname(__FILE__)))
@@ -55,6 +62,8 @@ module RockAUV
                     task_states_layout.add_widget task_states
 
                     @controller_status_tabs = ui.controller_status_tabs
+
+                    @controller_tasks = Hash.new
 
                     CONTROLLERS.each do |ctrl|
                         add_controller(ctrl)
@@ -70,7 +79,19 @@ module RockAUV
                 end
 
                 def add_controller(controller)
-                    controller_task = Orocos::Async.proxy(controller.controller_task_name)
+                    controller_task, settings_property, settings =
+                        controller_tasks[controller.controller_task_name]
+                    if !controller_task
+                        controller_task = Orocos::Async.proxy(controller.controller_task_name)
+                        settings_property = controller_task.property('pid_settings')
+                        settings = Types.base.LinearAngular6DPIDSettings.new
+                        controller_tasks[controller.controller_task_name] =
+                            [controller_task, settings_property, settings]
+                        settings_property.on_reachable do |*args|
+                            settings_property.write(settings)
+                        end
+                    end
+
                     feedback_task   = Orocos::Async.proxy(controller.feedback_task_name)
                     task_states.add controller_task
                     task_states.add feedback_task
@@ -95,6 +116,13 @@ module RockAUV
                         @pid_settings_splitter_sizes = pid_controller.splitter_sizes
                     end
                     pid_controller.monitor(controller_task)
+                    pid_controller.connect(SIGNAL(:pidSettingsChanged)) do
+                        controller.update_pid_settings[settings, pid_controller.current_pid_settings]
+                        begin
+                            settings_property.write(settings)
+                        rescue Orocos::NotFound, Orocos::ComError
+                        end
+                    end
                     controller_status_tabs.add_tab pid_controller, controller.name
 
                     job_state.update :INIT,
@@ -126,6 +154,9 @@ module RockAUV
                         job
                     end
 
+                    pid_controller.connect_to_task controller_task do
+                        connect PORT(:pid_state), METHOD(:update_pid_state)
+                    end
                     pid_controller.connect_to_task feedback_task do
                         connect PORT(controller.feedback_port) do |sample|
                             time, value = controller.feedback_getter[sample]

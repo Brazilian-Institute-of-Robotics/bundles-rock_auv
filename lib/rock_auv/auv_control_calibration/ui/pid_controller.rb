@@ -11,10 +11,6 @@ module RockAUV
                 attr_reader :pidsettings_widget
                 attr_reader :setpoint_format
 
-                def current_pid_settings
-                    pidsettings_widget.get
-                end
-
                 def initialize(parent = nil, setpoint_format: "%.2g")
                     super(parent)
 
@@ -28,6 +24,7 @@ module RockAUV
                     @pidstate_plot_widget = ui.pidstate_plot_widget
                     pidstate_plot_widget.title = ""
                     @pidsettings_widget = ui.pidsettings_widget
+                    pidsettings_widget.extend Vizkit::QtTypelibExtension
 
                     @setpoint_format = setpoint_format
                     @current_setpoint = nil
@@ -48,21 +45,8 @@ module RockAUV
                 signals 'splitterMoved()'
                 signals 'pidSettingsChanged()'
 
-                def monitor(controller)
-                    connect_to_task controller do
-                        connect PORT(:pid_state), METHOD(:update_pid_state)
-                    end
-                    pidsettings_widget.extend Vizkit::QtTypelibExtension
-
-                    Orocos.load_typekit 'auv_control'
-                    connect_to_task controller do
-                        connect SIGNAL(:pidSettingsChanged), PROPERTY(:pid_settings),
-                            getter: lambda {
-                                    settings = Types.base.LinearAngular6DPIDSettings.new
-                                    settings.linear[2] = widget.current_pid_settings
-                                    settings
-                            }
-                    end
+                def current_pid_settings
+                    pidsettings_widget.get
                 end
 
                 def setpoint=(value)
