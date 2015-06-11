@@ -43,7 +43,7 @@ module RockAUV
                 ]
 
 
-                Producer = Struct.new :name, :domain, :axis, :bound_service do
+                Producer = Struct.new :name, :domain, :axis, :bound_service, :port_name do
                     def to_s
                         "#<Producer/#{domain[0]}/#{domain[1]}/#{axis} #{bound_service}>"
                     end
@@ -86,10 +86,9 @@ module RockAUV
                                 end
                                 break
                             end
-                            new_name, new_axis, new_producer = self.class.apply_rule(result, rule, resolved_producers)
-
+                            new_producer = self.class.apply_rule(result, rule, resolved_producers)
                             producers_by_domains[rule.target_domain] ||= Array.new
-                            producers_by_domains[rule.target_domain] << Producer.new(new_name, rule.target_domain, new_axis, new_producer)
+                            producers_by_domains[rule.target_domain] << new_producer
                         end
                     end
 
@@ -138,7 +137,7 @@ module RockAUV
                     # twice
                     srv.model.model.domain.each do |reference, quantity, axis|
                         base_srv = Services::Controller.for(Services::Control::Domain.new(reference, quantity, axis))
-                        result << Producer.new(name, [reference,quantity], axis, srv.as(base_srv))
+                        result << Producer.new(name, [reference,quantity], axis, srv.as(base_srv), "#{reference}_#{quantity}_#{axis}")
                     end
                     result
                 end
@@ -158,6 +157,7 @@ module RockAUV
                         [p, convertion_m.require_dynamic_service(
                             "in_#{in_reference}_#{in_quantity}",
                             as: p.name,
+                            port_name: p.port_name,
                             control_domain_srv: Services::ControlledSystem.for(Services::Control::Domain.new(*p.domain, p.axis)))]
                     end
 
@@ -188,7 +188,9 @@ module RockAUV
                         end
                     end
 
-                    return convertion_srv.name, new_axis, convertion_child.find_data_service(convertion_srv.name)
+                    return Producer.new(convertion_srv.name, rule.target_domain,
+                                        new_axis, convertion_child.find_data_service(convertion_srv.name),
+                                        convertion_name)
                 end
             end
         end

@@ -38,9 +38,8 @@ class OroGen::AuvControl::Base
     RockAUV::Services::ControlledSystem::REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS.each do |reference, quantities|
         quantities.each do |quantity, srv|
             dynamic_service srv, as: "in_#{reference}_#{quantity}", dynamic: true, remove_when_unused: false do
-                actual_port_name = "cmd_in_#{name}"
                 provides options[:control_domain_srv], as: name,
-                    "cmd_in_#{reference}_#{quantity}" => actual_port_name
+                    "cmd_in_#{reference}_#{quantity}" =>  "cmd_in_#{options[:port_name]}"
             end
         end
     end
@@ -123,7 +122,10 @@ class OroGen::AuvControl::Base
         super
         update_expected_inputs
         each_dynamic_controlled_system_service do |srv|
-            orocos_task.addCommandInput("in_#{srv.name}", 0)
+            srv.each_input_port do |port|
+                port_name = port.to_component_port.name.gsub("cmd_", '')
+                orocos_task.addCommandInput(port_name, 0)
+            end
         end
     end
 
