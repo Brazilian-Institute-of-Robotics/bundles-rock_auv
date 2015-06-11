@@ -29,7 +29,7 @@ module RockAUV
                                    'gazebo:underwater:flat_fish',
                                    'pose_samples',
                                    lambda { |pose| [pose.time, pose.position.z] },
-                                   '%.2g',
+                                   '%.2f',
                                    lambda { |z| z },
                                    lambda { |z| z },
                                    lambda { |settings, value| settings.linear[2] = value }),
