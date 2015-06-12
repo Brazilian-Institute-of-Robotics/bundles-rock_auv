@@ -17,50 +17,80 @@ module RockAUV
 
                 attr_reader :controller_tasks
 
+                attr_reader :configuration_manager
+
                 Controller = Struct.new :name, :job_name, :job_argument_name,
-                    :controller_task_name, :feedback_task_name, :feedback_port, :feedback_getter,
-                    :format, :SI_to_ui, :ui_to_SI,
-                    :update_pid_settings
+                    :controller_name,
+                    :feedback_task_name, :feedback_port,
+                    :feedback_getter,
+                    :formatter, :pid_settings
+
+                POSITION_FORMAT = ["%.2f", lambda { |z| z }, lambda { |z| z }]
+                ANGULAR_FORMAT  = ["%i", lambda { |rad| rad * 180 / Math::PI }, lambda { |deg| Float(deg) * Math::PI / 180 }]
+
+                class ValueFormatter
+                    def initialize(format)
+                        @format = format
+                    end
+                    def format(value); @format % [value] end
+                    def SI_to_ui(value); value end
+                    def ui_to_SI(value); value end
+                end
+
+                class AngularValueFormatter < ValueFormatter
+                    def SI_to_ui(value); value * 180 / Math::PI end
+                    def ui_to_SI(value); value * Math::PI / 180 end
+                end
+
+                class PIDSettingsAccessor
+                    def initialize(field, index)
+                        @field, @index = field, index
+                    end
+                    def set(settings, value)
+                        settings.send(@field)[@index] = value
+                    end
+                    def get(settings)
+                        settings.send(@field)[@index]
+                    end
+                end
 
                 CONTROLLERS = [
-                    Controller.new('Z', "direct_z_control_def",
-                                   :z,
-                                   'auv_control_world_pose2body_effort',
-                                   'gazebo:underwater:flat_fish',
-                                   'pose_samples',
+                    Controller.new('Z', "constant_z_def", :setpoint,
+                                   'aligned_pos2aligned_vel',
+                                   'gazebo:underwater:flat_fish', 'pose_samples',
                                    lambda { |pose| [pose.time, pose.position.z] },
-                                   '%.2f',
-                                   lambda { |z| z },
-                                   lambda { |z| z },
-                                   lambda { |settings, value| settings.linear[2] = value }),
-                    Controller.new('Yaw',
-                                   "direct_yaw_control_def",
-                                   :yaw,
-                                   'auv_control_world_pose2body_effort',
-                                   'gazebo:underwater:flat_fish',
-                                   'pose_samples',
+                                   ValueFormatter.new("%.2f"),
+                                   PIDSettingsAccessor.new(:linear, 2)),
+                    Controller.new('ZVel', "constant_z_velocity_def", :setpoint,
+                                   'aligned_vel2body_effort',
+                                   'gazebo:underwater:flat_fish', 'pose_samples',
+                                   lambda { |pose| [pose.time, pose.velocity.z] },
+                                   ValueFormatter.new("%.2f"),
+                                   PIDSettingsAccessor.new(:linear, 2)),
+                    Controller.new('Yaw', "constant_yaw_def", :setpoint,
+                                   'aligned_pos2aligned_vel',
+                                   'gazebo:underwater:flat_fish', 'pose_samples',
                                    lambda { |pose| [pose.time, pose.orientation.yaw] },
-                                   '%i',
-                                   lambda { |rad| Integer(rad * 180 / Math::PI) },
-                                   lambda { |deg| Float(deg) * Math::PI / 180 },
-                                   lambda { |settings, value| settings.angular[2] = value }),
-                    Controller.new('Pitch',
-                                   "direct_pitch_control_def",
-                                   :pitch,
-                                   'auv_control_world_pose2body_effort',
-                                   'gazebo:underwater:flat_fish',
-                                   'pose_samples',
-                                   lambda { |pose| [pose.time, pose.orientation.pitch] },
-                                   '%i',
-                                   lambda { |rad| Integer(rad * 180 / Math::PI) },
-                                   lambda { |deg| Float(deg) * Math::PI / 180 },
-                                   lambda { |settings, value| settings.angular[0] = value })
+                                   AngularValueFormatter.new("%i"),
+                                   PIDSettingsAccessor.new(:angular, 2)),
+                    Controller.new('YawVel', "constant_yaw_velocity_def", :setpoint,
+                                   'aligned_vel2body_effort',
+                                   'gazebo:underwater:flat_fish', 'pose_samples',
+                                   lambda { |pose| [pose.time, pose.angular_velocity.z] },
+                                   AngularValueFormatter.new("%i"),
+                                   PIDSettingsAccessor.new(:angular, 2)),
                 ]
 
-                def initialize(syskit, parent = nil, setpoint: 0)
+
+                def initialize(syskit, parent = nil, setpoint: 0, loader: OroGen::Loaders::RTT.new)
                     super(parent)
 
+                    # This will cause both the model(s) and the configuration to
+                    # be loaded
+                    Roby.app.using_task_library('auv_control')
                     Orocos.load_typekit 'auv_control'
+                    @configuration_manager = OroGen::AuvControl::PIDController.configuration_manager
+                    configuration_manager.reload
 
                     @syskit = syskit
                     @ui = Vizkit.default_loader.load(File.expand_path('auv_calibration.ui', File.dirname(__FILE__)))
@@ -87,16 +117,39 @@ module RockAUV
                         @pid_settings_splitter_sizes ||= w.splitter_sizes
                         w.move_splitter(@pid_settings_splitter_sizes)
                     end
+
+                    ui.save_button.connect(SIGNAL('clicked()')) do
+                        save
+                    end
                 end
+
+                def save
+                    controller_tasks.each_key do |controller_name|
+                        configuration_manager.save(controller_name, replace: true)
+                    end
+                end
+                slots 'save()'
 
                 def add_controller(controller)
                     controller_task, settings_property, settings =
-                        controller_tasks[controller.controller_task_name]
+                        controller_tasks[controller.controller_name]
                     if !controller_task
-                        controller_task = Orocos::Async.proxy(controller.controller_task_name)
+                        controller_task = Orocos::Async.proxy("auv_control_#{controller.controller_name}")
                         settings_property = controller_task.property('pid_settings')
-                        settings = Types.base.LinearAngular6DPIDSettings.new
-                        controller_tasks[controller.controller_task_name] =
+                        settings =
+                            begin 
+                                configuration_manager.conf_as_typelib(
+                                    ['default', controller.controller_name], override: true)['pid_settings']
+                            rescue Orocos::TaskConfigurations::SectionNotFound
+                                configuration_manager.conf_as_typelib('default')['pid_settings']
+                            end
+
+                        if !settings
+                            settings = Types.base.LinearAngular6DPIDSettings.new
+                            settings.zero!
+                        end
+                        configuration_manager.add(controller.controller_name, Hash['pid_settings' => settings])
+                        controller_tasks[controller.controller_name] =
                             [controller_task, settings_property, settings]
                         settings_property.on_reachable do |*args|
                             settings_property.write(settings)
@@ -122,13 +175,15 @@ module RockAUV
                     controllers_layout.add_widget(job_start, row, 4)
                     controllers_layout.add_widget(job_kill,  row, 5)
 
-                    pid_controller = PIDController.new(self, setpoint_format: controller.format)
+                    pid_controller = PIDController.new(self, setpoint_format: controller.formatter.method(:format))
+                    pid_controller.update_pid_settings(controller.pid_settings.get(settings))
                     connect pid_controller, SIGNAL('splitterMoved()') do
                         @pid_settings_splitter_sizes = pid_controller.splitter_sizes
                     end
-                    pid_controller.monitor(controller_task)
                     pid_controller.connect(SIGNAL(:pidSettingsChanged)) do
-                        controller.update_pid_settings[settings, pid_controller.current_pid_settings]
+                        controller.pid_settings.set(settings, pid_controller.current_pid_settings)
+                        configuration_manager.add(controller.controller_name,
+                            Hash['pid_settings' => settings], merge: true)
                         begin
                             settings_property.write(settings)
                         rescue Orocos::NotFound, Orocos::ComError
@@ -141,7 +196,7 @@ module RockAUV
                         job_state.unreachable_color
 
                     connect pid_controller, SIGNAL('setpointChanged(float)') do |val|
-                        job_target.text = "T:#{controller.format}" % [val]
+                        job_target.text = "T:#{controller.formatter.format(val)}"
                     end
 
                     job = syskit.connect_to_ui(self) do
@@ -158,7 +213,7 @@ module RockAUV
                         connect job_start, SIGNAL(:clicked), START(job), restart: true
                         connect job_kill, SIGNAL(:clicked), KILL(job)
                         connect pid_controller, SIGNAL('setpointChanged(float)'), ARGUMENT(job, controller.job_argument_name),
-                            getter: controller.ui_to_SI
+                            getter: controller.formatter.method(:ui_to_SI)
                         connect PROGRESS(job) do |j|
                             update_job_state(job_state, j)
                         end
@@ -171,12 +226,12 @@ module RockAUV
                     pid_controller.connect_to_task feedback_task do
                         connect PORT(controller.feedback_port) do |sample|
                             time, value = controller.feedback_getter[sample]
-                            value = controller.SI_to_ui[value]
+                            value = controller.formatter.SI_to_ui(value)
                             if !job.arguments[controller.job_argument_name.to_sym]
                                 pid_controller.setpoint = value
                             end
                             pid_controller.update_feedback(time, value)
-                            job_feedback.text = "C:#{controller.format}" % [value]
+                            job_feedback.text = "C:#{controller.formatter.format(value)}"
                         end
                     end
                 end

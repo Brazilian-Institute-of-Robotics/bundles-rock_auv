@@ -26,7 +26,12 @@ module RockAUV
                     @pidsettings_widget = ui.pidsettings_widget
                     pidsettings_widget.extend Vizkit::QtTypelibExtension
 
-                    @setpoint_format = setpoint_format
+                    @setpoint_format =
+                        if setpoint_format.respond_to?(:to_str)
+                            lambda { |v| setpoint_format % [v] }
+                        else
+                            setpoint_format
+                        end
                     @current_setpoint = nil
 
                     connect pidsettings_widget, SIGNAL(:updated), self, SIGNAL(:pidSettingsChanged)
@@ -45,12 +50,16 @@ module RockAUV
                 signals 'splitterMoved()'
                 signals 'pidSettingsChanged()'
 
+                def update_pid_settings(settings)
+                    pidsettings_widget.set(settings)
+                end
+
                 def current_pid_settings
                     pidsettings_widget.get
                 end
 
                 def setpoint=(value)
-                    setpoint_edit.text = setpoint_format % [value]
+                    setpoint_edit.text = setpoint_format.call(value)
                     read_current_setpoint
                 end
 

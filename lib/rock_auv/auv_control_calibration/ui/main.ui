@@ -9,19 +9,29 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>534</width>
-    <height>349</height>
+    <width>525</width>
+    <height>447</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>AUV Controller Calibration</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
     <widget class="QComboBox" name="conf_chooser"/>
    </item>
-   <item row="1" column="0">
+   <item>
     <widget class="QTableWidget" name="matrix_editor"/>
+   </item>
+   <item>
+    <widget class="QPushButton" name="limits_button">
+     <property name="text">
+      <string>Compute Limits</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTableWidget" name="limits_editor"/>
    </item>
   </layout>
  </widget>
