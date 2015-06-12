@@ -183,7 +183,7 @@ module RockAUV
                         p.bound_service.connect_to child_srv
                     end
                     rule.axis.each do |mask, target|
-                        if new_axis & mask != 0
+                        if !(new_axis & mask).empty?
                             new_axis |= target
                         end
                     end
