@@ -3,6 +3,8 @@ require 'rock_auv/models/compositions/constant_setpoint_generator'
 
 module RockAUV
     module Compositions
-        ConstantWorldPosYawSetpointGenerator = ConstantSetpointGenerator.for { WorldPos(:yaw) }
+        module ConstantSetpointGenerators
+            AlignedVelZ = ConstantSetpointGenerator.for { AlignedVel(:z) }
+        end
     end
 end

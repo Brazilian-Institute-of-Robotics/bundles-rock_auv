@@ -3,6 +3,8 @@ require 'rock_auv/models/compositions/constant_setpoint_generator'
 
 module RockAUV
     module Compositions
-        ConstantWorldPosPitchSetpointGenerator = ConstantSetpointGenerator.for { WorldPos(:pitch) }
+        module ConstantSetpointGenerators
+            WorldPosZ = ConstantSetpointGenerator.for { WorldPos(:z) }
+        end
     end
 end

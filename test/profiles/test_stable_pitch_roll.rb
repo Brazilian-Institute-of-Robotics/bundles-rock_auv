@@ -1,8 +1,8 @@
-require 'models/profiles/auv_control_calibration'
+require 'models/profiles/stable_pitch_roll'
 
 module RockAUV
     module Profiles
-        describe AUVControlCalibration do
+        describe StablePitchRoll do
             # Verifies that the only variation points in the profile are
             # profile tags. If you want to limit the test to certain definitions,
             # give them as argument

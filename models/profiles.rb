@@ -1,1 +1,1 @@
-require 'rock_auv/models/profiles/auv_control_calibration'
+require "models/profiles/stable_pitch_roll"
