@@ -1,9 +1,9 @@
 module RockAUV
-module ControllerCalibration
+module AUVControlCalibration
 =begin
 ** Form generated from reading ui file 'generate_from_sdf.ui'
 **
-** Created: Tue Apr 21 17:10:52 2015
+** Created: Fri Jun 12 13:07:24 2015
 **      by: Qt User Interface Compiler version 4.8.6
 **
 ** WARNING! All changes made in this file will be lost when recompiling ui file!
