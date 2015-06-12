@@ -45,20 +45,22 @@ module RockAUV
             matrix
         end
 
-        def self.sdf_load_thrusters_poses(sdf_model, options = Hash.new)
-            options = validate_options options,
-                model_name: nil,
-                plugin_name: 'gazebo_thruster'
-
+        def self.sdf_find_thruster_plugin(sdf_model, model_name: nil, plugin_name: 'gazebo_thruster')
             if sdf_model.respond_to?(:to_str)
-                sdf_model = sdf_load_model_from_file(sdf_model, model_name: options[:model_name])
+                sdf_model = sdf_load_model_from_file(sdf_model, model_name: model_name)
             end
 
             # Look for the thruster plugin and extract the thruster info
-            thruster_plugin = sdf_model.xml.elements["plugin[@name=\"#{options[:plugin_name]}\"]"]
+            thruster_plugin = sdf_model.xml.elements["plugin[@name=\"#{plugin_name}\"]"]
             if !thruster_plugin
-                raise ArgumentError, "no thruster plugin in #{sdf_model.full_name}"
+                raise ArgumentError, "no plugin '#{plugin_name}' in #{sdf_model.full_name}"
             end
+
+            return sdf_model, thruster_plugin
+        end
+
+        def self.sdf_load_thrusters_poses(sdf_model, **options)
+            sdf_model, thruster_plugin = sdf_find_thruster_plugin(sdf_model, **options)
 
             links_by_name = sdf_model.each_link.inject(Hash.new) do |h, l|
                 h.merge!(l.name => l)
@@ -71,6 +73,18 @@ module RockAUV
                     raise ArgumentError, "thruster refers to link #{link_name} which does not exist"
                 end
                 result[link_name] = link.pose
+            end
+            result
+        end
+
+        def self.sdf_load_thruster_limits(sdf_model, options = Hash.new)
+            sdf_model, thruster_plugin = sdf_find_thruster_plugin(sdf_model, **options)
+
+            result = Hash.new
+            thruster_plugin.elements.to_a('thruster').map do |thruster_xml|
+                max_thrust = Integer(thruster_xml.elements['max_thrust'].text)
+                min_thrust = Integer(thruster_xml.elements['min_thrust'].text)
+                result[thruster_xml.attributes['name']] = [min_thrust, max_thrust]
             end
             result
         end
