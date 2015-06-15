@@ -12,11 +12,17 @@ module RockAUV
             tag 'z_samples', Rock::Services::ZProvider
             # Attitude
             tag 'orientation_samples', Rock::Services::Orientation
+            # Position
+            tag 'xy_samples', Rock::Services::Position
             # Full pose
             tag 'pose_samples', Rock::Services::Pose
 
             define 'constant_z', Compositions::StablePitchRoll::ConstantWorldPosZControl.
                 use(thrusters_tag, z_samples_tag)
+            define 'constant_forward_velocity', Compositions::StablePitchRoll::ConstantAlignedVelXControl.
+                use(thrusters_tag, xy_samples_tag)
+            define 'constant_left_velocity', Compositions::StablePitchRoll::ConstantAlignedVelYControl.
+                use(thrusters_tag, xy_samples_tag)
             define 'constant_z_velocity', Compositions::StablePitchRoll::ConstantAlignedVelZControl.
                 use(thrusters_tag, z_samples_tag)
             define 'constant_yaw', Compositions::StablePitchRoll::ConstantWorldPosYawControl.
@@ -24,9 +30,11 @@ module RockAUV
             define 'constant_yaw_velocity', Compositions::StablePitchRoll::ConstantAlignedVelYawControl.
                 use(thrusters_tag, orientation_samples_tag)
             define 'trajectory_follower', Compositions::StablePitchRoll::TrajectoryFollowerControl.
-                use(thrusters_tag, orientation_samples_tag)
+                use(thrusters_tag, pose_samples_tag)
             define 'goto_xy', Compositions::StablePitchRoll::GotoXY.
                 use(thrusters_tag, pose_samples_tag)
+            define 'hover', Compositions::StablePitchRoll::Hover.
+                use(thrusters_tag, xy_samples_tag)
         end
     end
 end
