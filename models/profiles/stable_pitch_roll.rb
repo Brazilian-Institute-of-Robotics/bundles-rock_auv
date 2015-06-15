@@ -21,6 +21,8 @@ module RockAUV
                 use(thrusters_tag, orientation_samples_tag)
             define 'constant_yaw_velocity', Compositions::StablePitchRoll::ConstantAlignedVelYawControl.
                 use(thrusters_tag, orientation_samples_tag)
+            define 'trajectory_follower', Compositions::StablePitchRoll::TrajectoryFollowerControl.
+                use(thrusters_tag, orientation_samples_tag)
         end
     end
 end
