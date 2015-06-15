@@ -4,3 +4,4 @@ require "test/compositions/stable_pitch_roll/test_constant_world_pos_yaw_control
 require "test/compositions/stable_pitch_roll/test_constant_aligned_vel_yaw_control"
 
 require "test/compositions/stable_pitch_roll/test_trajectory_follower_control"
+require "test/compositions/stable_pitch_roll/test_goto_xy"

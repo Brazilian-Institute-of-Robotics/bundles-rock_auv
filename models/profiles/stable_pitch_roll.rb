@@ -12,6 +12,8 @@ module RockAUV
             tag 'z_samples', Rock::Services::ZProvider
             # Attitude
             tag 'orientation_samples', Rock::Services::Orientation
+            # Full pose
+            tag 'pose_samples', Rock::Services::Pose
 
             define 'constant_z', Compositions::StablePitchRoll::ConstantWorldPosZControl.
                 use(thrusters_tag, z_samples_tag)
@@ -23,6 +25,8 @@ module RockAUV
                 use(thrusters_tag, orientation_samples_tag)
             define 'trajectory_follower', Compositions::StablePitchRoll::TrajectoryFollowerControl.
                 use(thrusters_tag, orientation_samples_tag)
+            define 'goto_xy', Compositions::StablePitchRoll::GotoXY.
+                use(thrusters_tag, pose_samples_tag)
         end
     end
 end
