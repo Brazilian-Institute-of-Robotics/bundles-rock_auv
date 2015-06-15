@@ -82,7 +82,7 @@ module RockAUV
                 ]
 
 
-                def initialize(syskit, parent = nil, setpoint: 0, loader: OroGen::Loaders::RTT.new)
+                def initialize(syskit, parent = nil)
                     super(parent)
 
                     # This will cause both the model(s) and the configuration to
