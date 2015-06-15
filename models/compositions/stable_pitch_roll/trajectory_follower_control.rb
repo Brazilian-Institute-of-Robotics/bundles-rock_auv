@@ -1,3 +1,4 @@
+require 'rock_auv/models/compositions/stable_pitch_roll/rules'
 require 'rock_auv/models/compositions/trajectory_follower'
 
 module RockAUV
