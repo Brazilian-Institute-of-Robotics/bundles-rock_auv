@@ -10,26 +10,69 @@ module OroGen
             use_syskit_model PIDController
             it_should_be_configurable
 
+            def connect_cmd_in(port)
+                dummy_task_m = Syskit::TaskContext.new_submodel do
+                    output_port 'out', '/base/LinearAngular6DCommand'
+                end
+                plan.add_mission(dummy_task = dummy_task_m.new)
+                dummy_task.out_port.connect_to port
+                dummy_task.out_port
+            end
+
             describe "#configure" do
                 use_syskit_model PIDController
 
                 it "creates the input ports as requested by the instanciated dynamic services" do
                     model = PIDController.specialize
-                    model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) })
-                    model.require_dynamic_service("in_world_pos", as: 'yaw', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:yaw) })
+                    model.require_dynamic_service("in_world_pos", as: 'depth',
+                        control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) },
+                        port_name: 'test_depth')
+                    model.require_dynamic_service("in_world_pos", as: 'yaw',
+                        control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:yaw) },
+                        port_name: 'test_yaw')
                     task = deploy_and_configure(model)
-                    assert task.orocos_task.has_port?('cmd_in_depth'), "expected a port called cmd_in_depth to have been created by the #configure method of #{task}, but #{task} only has #{task.orocos_task.enum_for(:each_input_port).map(&:name).sort.join(", ")}"
-                    assert task.orocos_task.has_port?('cmd_in_yaw'), "expected a port called cmd_in_yaw to have been created by the #configure method of #{task}, but #{task} only has #{task.orocos_task.enum_for(:each_input_port).map(&:name).sort.join(", ")}"
+
+                    assert task.orocos_task.has_port?('cmd_in_test_depth'), "expected a port called cmd_in_test_depth to have been created by the #configure method of #{task}, but #{task} only has #{task.orocos_task.enum_for(:each_input_port).map(&:name).sort.join(", ")}"
+                    assert task.orocos_task.has_port?('cmd_in_test_yaw'), "expected a port called cmd_in_test_yaw to have been created by the #configure method of #{task}, but #{task} only has #{task.orocos_task.enum_for(:each_input_port).map(&:name).sort.join(", ")}"
                 end
 
-                it "sets the expected inputs property based on the instanciated dynamic services" do
+                it "sets the expected inputs property based on the connected dynamic services" do
                     model = PIDController.specialize
-                    model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) })
-                    model.require_dynamic_service("in_world_pos", as: 'yaw', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:yaw) })
-                    task = deploy_and_configure(model)
+                    model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) }, port_name: 'test_depth')
+                    model.require_dynamic_service("in_world_pos", as: 'yaw', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:yaw) }, port_name: 'test_yaw')
+                    task = syskit_deploy(model)
+                    connect_cmd_in(task.cmd_in_test_depth_port)
+                    syskit_setup(task)
+
                     expected = task.orocos_task.expected_inputs
                     assert_equal [false, false, true], expected.linear.to_a
-                    assert_equal [false, false, true], expected.angular.to_a
+                    # Yaw input is not connected
+                    assert_equal [false, false, false], expected.angular.to_a
+                end
+
+                it "propagates changes in expected inputs along the control chain" do
+                    pos_controller_m = PIDController.specialize
+                    pos_controller_m.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) }, port_name: 'test')
+                    pos_controller_m.add_output(as: 'vel') { WorldVel(:z) }
+                    vel_controller_m = PIDController.specialize
+                    vel_controller_m.require_dynamic_service("in_world_vel", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) }, port_name: 'test')
+
+                    use_deployment PIDController => ['pos_test', 'vel_test']
+                    pos_controller = syskit_deploy(pos_controller_m.prefer_deployed_tasks('pos_test'))
+                    vel_controller = syskit_deploy(vel_controller_m.prefer_deployed_tasks('vel_test'))
+                    pos_controller.cmd_out_port.connect_to vel_controller.cmd_in_test_port
+
+                    syskit_setup(pos_controller)
+                    syskit_setup(vel_controller)
+                    assert_equal [false, false, false], vel_controller.expected_inputs.linear.to_a
+
+                    dummy_port = connect_cmd_in(pos_controller.cmd_in_test_port)
+                    pos_controller.update_expected_inputs
+                    assert_equal [false, false, true], vel_controller.expected_inputs.linear.to_a
+
+                    dummy_port.disconnect_from pos_controller.cmd_in_test_port
+                    pos_controller.update_expected_inputs
+                    assert_equal [false, false, false], vel_controller.expected_inputs.linear.to_a
                 end
             end
 
@@ -38,21 +81,21 @@ module OroGen
 
                 it "returns true if the controller's inputs are in the world frame" do
                     model = PIDController.specialize
-                    model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) })
+                    model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) }, port_name: 'test')
                     assert model.world_frame?
                 end
 
                 it "returns false if the controller's inputs are not in the world frame" do
                     model = PIDController.specialize
-                    model.require_dynamic_service("in_aligned_vel", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { AlignedVel(:z) })
+                    model.require_dynamic_service("in_aligned_vel", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { AlignedVel(:z) }, port_name: 'test')
                     assert !model.world_frame?
                 end
 
                 it "fails configuration if required to process inputs from different reference frames" do
                     model = PIDController.specialize
-                    model.require_dynamic_service("in_world_vel", as: 'vel_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) })
-                    model.require_dynamic_service("in_aligned_pos", as: 'pos_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { AlignedPos(:z) })
-                    assert_raises(ArgumentError) { model.world_frame? }
+                    model.require_dynamic_service("in_world_vel", as: 'vel_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) }, port_name: 'test_world_vel')
+                    model.require_dynamic_service("in_aligned_pos", as: 'pos_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { AlignedPos(:z) }, port_name: 'test_aligned_pos')
+                    assert_raises(RockAUV::Services::Control::Domain::IncompatibleDomains) { model.world_frame? }
                 end
             end
 
@@ -61,21 +104,21 @@ module OroGen
 
                 it "returns true if the controller's inputs are positions" do
                     model = PIDController.specialize
-                    model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) })
+                    model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) }, port_name: 'test')
                     assert model.position_control?
                 end
 
                 it "returns false if the controller's inputs are not positions" do
                     model = PIDController.specialize
-                    model.require_dynamic_service("in_world_vel", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) })
+                    model.require_dynamic_service("in_world_vel", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) }, port_name: 'test')
                     assert !model.position_control?
                 end
 
                 it "fails configuration if required to process inputs from different domains" do
                     model = PIDController.specialize
-                    model.require_dynamic_service("in_world_vel", as: 'vel_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) })
-                    model.require_dynamic_service("in_world_pos", as: 'pos_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) })
-                    assert_raises(ArgumentError) { model.position_control? }
+                    model.require_dynamic_service("in_world_vel", as: 'vel_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) }, port_name: 'test_world_vel')
+                    model.require_dynamic_service("in_world_pos", as: 'pos_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) }, port_name: 'test_world_pos')
+                    assert_raises(RockAUV::Services::Control::Domain::IncompatibleDomains) { model.position_control? }
                 end
             end
         end
@@ -87,55 +130,55 @@ module OroGen
                 attr_reader :model
                 before do
                     @model = PIDController.specialize
-                    model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) })
+                    model.require_dynamic_service("in_world_pos", as: 'depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) }, port_name: 'test')
                 end
 
                 it "sets world_frame to the value of world_frame? (false)" do
                     task = deploy(model)
                     flexmock(task.model).should_receive(:world_frame?).once.and_return(false)
-                    assert !syskit_setup_component(task).orocos_task.world_frame
+                    assert !syskit_setup(task).orocos_task.world_frame
                 end
 
                 it "sets world_frame to the value of world_frame? (true)" do
                     task = deploy(model)
                     flexmock(task.model).should_receive(:world_frame?).once.and_return(true)
-                    assert syskit_setup_component(task).orocos_task.world_frame
+                    assert syskit_setup(task).orocos_task.world_frame
                 end
 
                 it "sets position_control to the value of position_control? (false)" do
                     task = deploy(model)
                     flexmock(task.model).should_receive(:position_control?).once.and_return(false)
-                    assert !syskit_setup_component(task).orocos_task.position_control
+                    assert !syskit_setup(task).orocos_task.position_control
                 end
 
                 it "sets position_control to the value of position_control? (true)" do
                     task = deploy(model)
                     flexmock(task.model).should_receive(:position_control?).once.and_return(true)
-                    assert syskit_setup_component(task).orocos_task.position_control
+                    assert syskit_setup(task).orocos_task.position_control
                 end
 
                 it "fails configuration if required to process inputs from different domains" do
-                    model.require_dynamic_service("in_world_vel", as: 'pos_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) })
+                    model.require_dynamic_service("in_world_vel", as: 'pos_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) }, port_name: 'test_world_vel')
                     assert_raises(Roby::MissionFailedError) { deploy_and_configure(model) }
                 end
             end
 
             describe "#can_merge?" do
                 it "returns true if the input domains are compatible" do
-                    left  = PIDController.add_input(as: 'depth') { WorldPos(:z) }
-                    right = PIDController.add_input(as: 'heading') { WorldPos(:yaw) }
+                    left  = PIDController.add_input(as: 'depth', port_name: 'test_depth') { WorldPos(:z) }
+                    right = PIDController.add_input(as: 'heading', port_name: 'test_heading') { WorldPos(:yaw) }
                     assert left.can_merge?(right)
                 end
 
                 it "returns false if the input domains are not compatible" do
-                    left  = PIDController.add_input(as: 'depth') { WorldPos(:y) }
-                    right = PIDController.add_input(as: 'forward') { WorldPos(:x) }
+                    left  = PIDController.add_input(as: 'depth', port_name: 'test_depth') { WorldPos(:y) }
+                    right = PIDController.add_input(as: 'forward', port_name: 'test_forward') { WorldPos(:x) }
                     assert !left.can_merge?(right)
                 end
 
                 it "only compares the disjoint parts of the domain" do
-                    left  = PIDController.add_input(as: 'depth') { WorldPos(:y) }
-                    right = PIDController.add_input(as: 'heading') { WorldPos(:yaw) }
+                    left  = PIDController.add_input(as: 'depth', port_name: 'test_depth') { WorldPos(:y) }
+                    right = PIDController.add_input(as: 'heading', port_name: 'test_heading') { WorldPos(:yaw) }
                     right.add_input(as: 'depth') { WorldPos(:y) }
                     assert left.can_merge?(right)
                 end

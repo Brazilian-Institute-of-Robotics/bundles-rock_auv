@@ -38,6 +38,11 @@ class OroGen::AuvControl::Base
     RockAUV::Services::ControlledSystem::REFERENCE_QUANTITY_TO_SERVICE_MAPPINGS.each do |reference, quantities|
         quantities.each do |quantity, srv|
             dynamic_service srv, as: "in_#{reference}_#{quantity}", dynamic: true, remove_when_unused: false do
+                if !options[:port_name]
+                    raise ArgumentError, "instanciating the in_#{reference}_#{quantity} dynamic service requires a port_name: option with the name of the port that should be created"
+                elsif !options[:control_domain_srv]
+                    raise ArgumentError, "instanciating the in_#{reference}_#{quantity} dynamic service requires a control_domain_srv: option with the service model that should be actually instanciated"
+                end
                 provides options[:control_domain_srv], as: name,
                     "cmd_in_#{reference}_#{quantity}" =>  "cmd_in_#{options[:port_name]}"
             end
@@ -78,13 +83,14 @@ class OroGen::AuvControl::Base
     #   model = PIDController.add_input(as: 'depth') { WorldPos(:z) }
     #
     # @see add_output
-    def self.add_input(domain = nil, as: nil, &domain_def)
+    def self.add_input(domain = nil, as: nil, port_name: as, &domain_def)
         model = ensure_model_is_specialized
         controlled_system_srv = RockAUV::Services::ControlledSystem.for(domain, &domain_def)
         r, q, _ = controlled_system_srv.domain.simple_domain
         model.require_dynamic_service(
             "in_#{r}_#{q}", as: as,
-            control_domain_srv: controlled_system_srv)
+            control_domain_srv: controlled_system_srv,
+            port_name: port_name)
         model
     end
 
