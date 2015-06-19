@@ -27,11 +27,11 @@ module RockAUV
                 use(thrusters_tag, z_samples_tag)
             define 'constant_yaw', Compositions::StablePitchRoll::ConstantWorldPosYawControl.
                 use(thrusters_tag, orientation_samples_tag)
+            define 'goto_xy', Compositions::StablePitchRoll::ConstantWorldPosXYControl.
+                use(thrusters_tag, orientation_samples_tag)
             define 'constant_yaw_velocity', Compositions::StablePitchRoll::ConstantAlignedVelYawControl.
                 use(thrusters_tag, orientation_samples_tag)
             define 'trajectory_follower', Compositions::StablePitchRoll::TrajectoryFollowerControl.
-                use(thrusters_tag, pose_samples_tag)
-            define 'goto_xy', Compositions::StablePitchRoll::GotoXY.
                 use(thrusters_tag, pose_samples_tag)
             define 'hover', Compositions::StablePitchRoll::Hover.
                 use(thrusters_tag, xy_samples_tag)
