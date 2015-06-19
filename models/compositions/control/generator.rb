@@ -137,7 +137,7 @@ module RockAUV
                     # twice
                     srv.model.model.domain.each do |reference, quantity, axis|
                         base_srv = Services::Controller.for(Services::Control::Domain.new(reference, quantity, axis))
-                        result << Producer.new(name, [reference,quantity], axis, srv.as(base_srv), "#{reference}_#{quantity}_#{axis}")
+                        result << Producer.new(name, [reference,quantity], axis, srv.as(base_srv), "#{reference}_#{quantity}_#{axis.each.to_a.join("_")}")
                     end
                     result
                 end
