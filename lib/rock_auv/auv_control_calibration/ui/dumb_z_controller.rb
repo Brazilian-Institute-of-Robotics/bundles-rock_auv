@@ -221,7 +221,8 @@ module RockAUV
                     end
 
                     pid_controller.connect_to_task controller_task do
-                        connect PORT(:pid_state), METHOD(:update_pid_state)
+                        connect PORT(:pid_state), METHOD(:update_pid_state),
+                            getter: controller.pid_settings.method(:get)
                     end
                     pid_controller.connect_to_task feedback_task do
                         connect PORT(controller.feedback_port) do |sample|

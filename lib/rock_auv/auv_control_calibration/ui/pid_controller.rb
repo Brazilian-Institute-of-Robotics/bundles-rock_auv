@@ -79,7 +79,6 @@ module RockAUV
                 signals 'setpointChanged(float)'
 
                 def update_pid_state(state)
-                    state = state.linear[2]
                     pidstate_plot_widget.update(state.P, "P", time: state.time)
                     pidstate_plot_widget.update(state.P + state.I, "P+I", time: state.time)
                     pidstate_plot_widget.update(state.P + state.I + state.D, "P+I+D", time: state.time)
