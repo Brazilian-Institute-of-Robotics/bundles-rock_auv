@@ -176,7 +176,7 @@ module RockAUV
                     convertion_name = "#{in_reference}_#{in_quantity}2#{reference}_#{quantity}"
                     convertion_m = convertion_m.
                         prefer_deployed_tasks("auv_control_#{convertion_name}").
-                        with_conf(convertion_name, 'default')
+                        with_conf('default', convertion_name)
                     convertion_child = composition_m.add convertion_m, as: convertion_name
                     producer_pairs.each do |p, srv|
                         child_srv = convertion_child.find_data_service(srv.name)
