@@ -258,13 +258,30 @@ module RockAUV
                             conflicts = shifts.inject(conflicts) do |c, s|
                                 c | (1 << s)
                             end
-                            QUANTITIES_BY_REFERENCE[r].each do |q|
-                                idx = shift_for(r, q) + Axis.shift_for(a)
-                                result[idx] = (1 << idx) | conflicts
+                            shifts.each do |s|
+                                result[s] = conflicts
                             end
                         end
                     end
+
+                    # Now, mark that all axes conflict with themselves in all
+                    # reference and quantities
+                    6.times do |axis_shift|
+                        encoded = SHIFTS.each_value.inject(0) do |enc, s|
+                            enc | (1 << (s + axis_shift))
+                        end
+                        SHIFTS.each_value do |s|
+                            result[s + axis_shift] |= encoded
+                        end
+                    end
                     result
+                end
+
+                def self.display_conflict_matrix(matrix)
+                    matrix.each_with_index do |conflict, i|
+                        puts "#{Domain.from_raw(1 << i, conflict).inspect}"
+                    end
+                    nil
                 end
 
                 # Tests if controllers of two different domains conflict
@@ -299,33 +316,59 @@ module RockAUV
                 end
 
                 CONFLICTS = Hash[
-                    [:world, Axis.x! | Axis.y!] => conflict_merge(
-                        :aligned, Axis.x! | Axis.y!,
-                        :body, Axis.x! | Axis.y! | Axis.z!),
+                    [:world, Axis.x!] => conflict_merge(
+                        :aligned, Axis.y!,
+                        :body, Axis.y! | Axis.z!),
+                    [:world, Axis.y!] => conflict_merge(
+                        :aligned, Axis.x!,
+                        :body, Axis.x! | Axis.z!),
                     [:world, Axis.z!] => conflict_merge(
-                        :aligned, Axis.z!,
-                        :body, Axis.x! | Axis.y! | Axis.z!),
+                        :body, Axis.x! | Axis.y!),
                     [:world, Axis.yaw!] => conflict_merge(
-                        :aligned, Axis.yaw!,
-                        :body, Axis.yaw! | Axis.pitch! | Axis.roll!),
-                    [:world, Axis.pitch! | Axis.roll!] => conflict_merge(
-                        :aligned, Axis.pitch! | Axis.roll!,
-                        :body, Axis.yaw! | Axis.pitch! | Axis.roll!),
-                    [:aligned, Axis.x! | Axis.y!] => conflict_merge(
-                        :world, Axis.x! | Axis.y!,
-                        :body, Axis.x! | Axis.y! | Axis.z!),
+                        :body, Axis.pitch! | Axis.roll!),
+                    [:world, Axis.pitch!] => conflict_merge(
+                        :aligned, Axis.roll!,
+                        :body, Axis.yaw! | Axis.roll!),
+                    [:world, Axis.roll!] => conflict_merge(
+                        :aligned, Axis.pitch!,
+                        :body, Axis.yaw! | Axis.pitch!),
+
+                    [:aligned, Axis.x!] => conflict_merge(
+                        :world, Axis.y!,
+                        :body, Axis.y! | Axis.z!),
+                    [:aligned, Axis.y!] => conflict_merge(
+                        :world, Axis.x!,
+                        :body, Axis.x! | Axis.z!),
                     [:aligned, Axis.z!] => conflict_merge(
-                        :world, Axis.z!,
-                        :body, Axis.x! | Axis.y! | Axis.z!),
+                        :body, Axis.x! | Axis.y!),
                     [:aligned, Axis.yaw!] => conflict_merge(
-                        :world, Axis.yaw!,
-                        :body, Axis.yaw! | Axis.pitch! | Axis.roll!),
-                    [:aligned, Axis.pitch! | Axis.roll!] => conflict_merge(
+                        :body, Axis.pitch! | Axis.roll!),
+                    [:aligned, Axis.pitch!] => conflict_merge(
+                        :world, Axis.roll!,
+                        :body, Axis.yaw! | Axis.roll!),
+                    [:aligned, Axis.roll!] => conflict_merge(
+                        :world, Axis.pitch!,
+                        :body, Axis.yaw! | Axis.pitch!),
+
+                    [:body, Axis.x!] => conflict_merge(
+                        :world, Axis.y! | Axis.z!,
+                        :aligned, Axis.y! | Axis.z!),
+                    [:body, Axis.y!] => conflict_merge(
+                        :world, Axis.x! | Axis.z!,
+                        :aligned, Axis.x! | Axis.z!),
+                    [:body, Axis.z!] => conflict_merge(
+                        :world, Axis.x! | Axis.y!,
+                        :aligned, Axis.x! | Axis.y!),
+                    [:body, Axis.yaw!] => conflict_merge(
                         :world, Axis.pitch! | Axis.roll!,
-                        :body, Axis.yaw! | Axis.pitch! | Axis.roll!),
-                    [:body, Axis.x! | Axis.y! | Axis.z!] => conflict_merge(
-                        :world, Axis.x! | Axis.y! | Axis.z!,
-                        :body, Axis.x! | Axis.y! | Axis.z!),
+                        :aligned, Axis.pitch! | Axis.roll!),
+                    [:body, Axis.pitch!] => conflict_merge(
+                        :world, Axis.yaw! | Axis.roll!,
+                        :aligned, Axis.yaw! | Axis.roll!),
+                    [:body, Axis.roll!] => conflict_merge(
+                        :world, Axis.yaw! | Axis.pitch!,
+                        :aligned, Axis.yaw! | Axis.pitch!)
+
                 ]
                 CONFLICTS_MATRIX = build_conflict_matrix(CONFLICTS)
 
