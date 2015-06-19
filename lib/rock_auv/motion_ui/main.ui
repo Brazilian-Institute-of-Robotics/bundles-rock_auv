@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SimpleControlUI</class>
+ <widget class="QWidget" name="SimpleControlUI">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>533</width>
+    <height>498</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="constant_z_group">
+     <property name="title">
+      <string>Auto Depth</string>
+     </property>
+     <layout class="QHBoxLayout" name="constant_z_layout">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>T</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="constant_z_target">
+        <property name="text">
+         <string>0</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>C</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="constant_z_current">
+        <property name="text">
+         <string>0</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="constant_z_go">
+        <property name="text">
+         <string>Go</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="constant_z_kill">
+        <property name="text">
+         <string>Kill</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="1" rowspan="4">
+    <widget class="QGroupBox" name="tasks_group">
+     <property name="title">
+      <string>Task States</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="constant_yaw_group">
+     <property name="title">
+      <string>Auto Heading</string>
+     </property>
+     <layout class="QHBoxLayout" name="constant_yaw_layout">
+      <item>
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>T</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="constant_yaw_target">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>0</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>C</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="constant_yaw_current">
+        <property name="text">
+         <string>0</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="constant_yaw_go">
+        <property name="text">
+         <string>Go</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="constant_yaw_kill">
+        <property name="text">
+         <string>Kill</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="goto_xy_group">
+     <property name="title">
+      <string>X/Y Navigation</string>
+     </property>
+     <layout class="QHBoxLayout" name="goto_xy_layout">
+      <item>
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>T</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="goto_xy_target">
+        <property name="text">
+         <string>0/0</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>C</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="goto_xy_current">
+        <property name="text">
+         <string>0/0</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="goto_xy_go">
+        <property name="text">
+         <string>Go</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="goto_xy_kill">
+        <property name="text">
+         <string>Kill</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="OrientationView" name="orientation">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="toolTip">
+      <string>OrientationView</string>
+     </property>
+     <property name="whatsThis">
+      <string/>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MultiWidget</class>
+   <extends>QWidget</extends>
+   <header>multi_view/MultiWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>OrientationView</class>
+   <extends>MultiWidget</extends>
+   <header>rock_widget_collection/orientation.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

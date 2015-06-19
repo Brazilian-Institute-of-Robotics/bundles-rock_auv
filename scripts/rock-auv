@@ -1,0 +1,9 @@
+#! /usr/bin/env ruby
+
+require 'Qt'
+require 'vizkit'
+require 'rock/bundles'
+require 'rock_auv/cli'
+
+RockAUV::CLI.start(ARGV)
+
