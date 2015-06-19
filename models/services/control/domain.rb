@@ -180,7 +180,11 @@ module RockAUV
                             ret = [r, q, a]
                         end
                     end
-                    return *ret
+                    if ret
+                        return *ret
+                    else
+                        return nil, nil, Axis.new
+                    end
                 end
 
                 def hash; encoded.hash end
