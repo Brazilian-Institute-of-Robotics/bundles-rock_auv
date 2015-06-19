@@ -110,6 +110,7 @@ module RockAUV
                     main_layout.add_widget ui
 
                     @controllers_layout  = Qt::GridLayout.new(ui.controllers_group)
+                    controllers_layout.spacing = 0
                     @task_states = Vizkit.default_loader.StateViewer
                     task_states_layout = Qt::VBoxLayout.new(ui.tasks_group)
                     task_states_layout.add_widget task_states
