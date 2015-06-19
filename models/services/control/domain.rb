@@ -133,14 +133,17 @@ module RockAUV
                 # @param [Domain] domain the domain that should be merged with
                 #   self
                 # @return [Domain] the merged domain
-                # @raise ArgumentError if self and domain control the same
-                #   reference/quantity/axis
                 def |(domain)
-                    if !compatible_with?(domain)
-                        raise IncompatibleDomains, "#{self} and #{domain} are incompatible"
-                    end
-
                     Domain.from_raw(encoded | domain.encoded, conflicts | domain.conflicts)
+                end
+
+                # Returns the intersection of two domains
+                #
+                # @param [Domain] domain the domain that should be intersected with
+                #   self
+                # @return [Domain] the intersection
+                def &(domain)
+                    Domain.from_raw(encoded & domain.encoded, conflicts & domain.conflicts)
                 end
 
                 # Enumerates all parts of the control domain that are actually
