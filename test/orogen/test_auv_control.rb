@@ -30,7 +30,7 @@ module OroGen
                     model.require_dynamic_service("in_world_pos", as: 'yaw',
                         control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:yaw) },
                         port_name: 'test_yaw')
-                    task = deploy_and_configure(model)
+                    task = syskit_stub_deploy_and_configure(model)
 
                     assert task.orocos_task.has_port?('cmd_in_test_depth'), "expected a port called cmd_in_test_depth to have been created by the #configure method of #{task}, but #{task} only has #{task.orocos_task.enum_for(:each_input_port).map(&:name).sort.join(", ")}"
                     assert task.orocos_task.has_port?('cmd_in_test_yaw'), "expected a port called cmd_in_test_yaw to have been created by the #configure method of #{task}, but #{task} only has #{task.orocos_task.enum_for(:each_input_port).map(&:name).sort.join(", ")}"
@@ -42,7 +42,7 @@ module OroGen
                     model.require_dynamic_service("in_world_pos", as: 'yaw', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:yaw) }, port_name: 'test_yaw')
                     task = syskit_deploy(model)
                     connect_cmd_in(task.cmd_in_test_depth_port)
-                    syskit_setup(task)
+                    syskit_configure(task)
 
                     expected = task.orocos_task.expected_inputs
                     assert_equal [false, false, true], expected.linear.to_a
@@ -62,8 +62,8 @@ module OroGen
                     vel_controller = syskit_deploy(vel_controller_m.prefer_deployed_tasks('vel_test'))
                     pos_controller.cmd_out_port.connect_to vel_controller.cmd_in_test_port
 
-                    syskit_setup(pos_controller)
-                    syskit_setup(vel_controller)
+                    syskit_configure(pos_controller)
+                    syskit_configure(vel_controller)
                     assert_equal [false, false, false], vel_controller.expected_inputs.linear.to_a
 
                     dummy_port = connect_cmd_in(pos_controller.cmd_in_test_port)
@@ -95,7 +95,7 @@ module OroGen
                     model = PIDController.specialize
                     model.require_dynamic_service("in_world_vel", as: 'vel_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) }, port_name: 'test_world_vel')
                     model.require_dynamic_service("in_aligned_pos", as: 'pos_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { AlignedPos(:z) }, port_name: 'test_aligned_pos')
-                    assert_raises(RockAUV::Services::Control::Domain::IncompatibleDomains) { model.world_frame? }
+                    assert_raises(RockAUV::Services::Control::Domain::ComplexDomainError) { model.world_frame? }
                 end
             end
 
@@ -134,32 +134,32 @@ module OroGen
                 end
 
                 it "sets world_frame to the value of world_frame? (false)" do
-                    task = deploy(model)
+                    task = syskit_deploy(model)
                     flexmock(task.model).should_receive(:world_frame?).once.and_return(false)
-                    assert !syskit_setup(task).orocos_task.world_frame
+                    assert !syskit_configure(task).orocos_task.world_frame
                 end
 
                 it "sets world_frame to the value of world_frame? (true)" do
-                    task = deploy(model)
+                    task = syskit_deploy(model)
                     flexmock(task.model).should_receive(:world_frame?).once.and_return(true)
-                    assert syskit_setup(task).orocos_task.world_frame
+                    assert syskit_configure(task).orocos_task.world_frame
                 end
 
                 it "sets position_control to the value of position_control? (false)" do
-                    task = deploy(model)
+                    task = syskit_deploy(model)
                     flexmock(task.model).should_receive(:position_control?).once.and_return(false)
-                    assert !syskit_setup(task).orocos_task.position_control
+                    assert !syskit_configure(task).orocos_task.position_control
                 end
 
                 it "sets position_control to the value of position_control? (true)" do
-                    task = deploy(model)
+                    task = syskit_deploy(model)
                     flexmock(task.model).should_receive(:position_control?).once.and_return(true)
-                    assert syskit_setup(task).orocos_task.position_control
+                    assert syskit_configure(task).orocos_task.position_control
                 end
 
                 it "fails configuration if required to process inputs from different domains" do
                     model.require_dynamic_service("in_world_vel", as: 'pos_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) }, port_name: 'test_world_vel')
-                    assert_raises(Roby::MissionFailedError) { deploy_and_configure(model) }
+                    assert_raises(RockAUV::Services::Control::Domain::ComplexDomainError) { syskit_deploy_and_configure(model) }
                 end
             end
 

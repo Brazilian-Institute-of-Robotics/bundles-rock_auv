@@ -47,7 +47,7 @@ module RockAUV
             it "generates the expected setpoint command with Time.now as time" do
                 reference_time = Time.now
                 flexmock(Time).should_receive(:now).and_return { reference_time }
-                task = stub_deploy_and_start(task_m.with_arguments(setpoint: setpoint))
+                task = syskit_stub_deploy_configure_and_start(task_m.with_arguments(setpoint: setpoint))
                 sample = assert_has_one_new_sample(task.out_port)
                 out = self.out.dup
                 out.time = reference_time
