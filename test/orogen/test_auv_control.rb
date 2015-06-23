@@ -118,7 +118,43 @@ module OroGen
                     model = PIDController.specialize
                     model.require_dynamic_service("in_world_vel", as: 'vel_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldVel(:z) }, port_name: 'test_world_vel')
                     model.require_dynamic_service("in_world_pos", as: 'pos_depth', control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) }, port_name: 'test_world_pos')
-                    assert_raises(RockAUV::Services::Control::Domain::IncompatibleDomains) { model.position_control? }
+                    assert_raises(RockAUV::Services::Control::Domain::ComplexDomainError) { model.position_control? }
+                end
+            end
+            describe "#each_input_domain" do
+                use_syskit_model PIDController
+
+                attr_reader :base_m, :source_m, :base, :source
+                before do
+                    base_m = Base
+                    base_m = base_m.add_input(as: 'depth', port_name: 'depth') { WorldPos(:z) }
+                    base_m = base_m.add_input(as: 'forward', port_name: 'forward') { WorldPos(:x) }
+                    @base_m = base_m
+                    @source_m = Syskit::TaskContext.new_submodel do
+                        output_port 'out', '/base/LinearAngular6DCommand'
+                    end
+                    plan.add(@source = source_m.new)
+                    plan.add(@base = base_m.new)
+                end
+
+                it "yields only ports that are connected" do
+                    source.out_port.connect_to base.cmd_in_depth_port
+                    z_domain = RockAUV::Services::Control.Domain { WorldPos(:z) }
+                    assert_equal [[base.cmd_in_depth_port, z_domain, base.depth_srv]],
+                        base.each_input_domain.to_a
+                end
+
+                it "yields a port as many times as there are services for it" do
+                    base.specialize
+                    base.model.add_input(as: 'depth2', port_name: 'depth') { WorldPos(:z) }
+                    z_domain = RockAUV::Services::Control.Domain { WorldPos(:z) }
+
+                    source.out_port.connect_to base.cmd_in_depth_port
+                    assert_equal [[base.cmd_in_depth_port, z_domain, base.depth_srv],
+                                  [base.cmd_in_depth_port, z_domain, base.depth2_srv]].to_set,
+                        base.each_input_domain.to_set
+                end
+                it "yields the domains as projected on the service's domain" do
                 end
             end
         end
@@ -164,22 +200,37 @@ module OroGen
             end
 
             describe "#can_merge?" do
+                attr_reader :left_source, :right_source
+                before do
+                    source_m = Syskit::TaskContext.new_submodel do
+                        output_port 'out', '/base/LinearAngular6DCommand'
+                    end
+                    plan.add(@left_source = source_m.new)
+                    plan.add(@right_source = source_m.new)
+                end
                 it "returns true if the input domains are compatible" do
-                    left  = PIDController.add_input(as: 'depth', port_name: 'test_depth') { WorldPos(:z) }
-                    right = PIDController.add_input(as: 'heading', port_name: 'test_heading') { WorldPos(:yaw) }
+                    left  = PIDController.add_input(as: 'depth', port_name: 'z') { WorldPos(:z) }.new
+                    right = PIDController.add_input(as: 'heading', port_name: 'yaw') { WorldPos(:yaw) }.new
+                    left_source.out_port.connect_to left.cmd_in_z_port
+                    right_source.out_port.connect_to right.cmd_in_yaw_port
                     assert left.can_merge?(right)
                 end
 
                 it "returns false if the input domains are not compatible" do
-                    left  = PIDController.add_input(as: 'depth', port_name: 'test_depth') { WorldPos(:y) }
-                    right = PIDController.add_input(as: 'forward', port_name: 'test_forward') { WorldPos(:x) }
+                    left  = PIDController.add_input(as: 'depth', port_name: 'y')     { WorldPos(:y) }.new
+                    right = PIDController.add_input(as: 'forward', port_name: 'xy') { WorldPos(:x, :y) }.new
+                    left_source.out_port.connect_to left.cmd_in_y_port
+                    right_source.out_port.connect_to right.cmd_in_xy_port
                     assert !left.can_merge?(right)
                 end
 
                 it "only compares the disjoint parts of the domain" do
-                    left  = PIDController.add_input(as: 'depth', port_name: 'test_depth') { WorldPos(:y) }
-                    right = PIDController.add_input(as: 'heading', port_name: 'test_heading') { WorldPos(:yaw) }
-                    right.add_input(as: 'depth') { WorldPos(:y) }
+                    left  = PIDController.add_input(as: 'depth', port_name: 'y') { WorldPos(:y) }.new
+                    right = PIDController.add_input(as: 'heading', port_name: 'yaw') { WorldPos(:yaw) }.new
+                    right.specialize
+                    right.model.add_input(as: 'depth') { WorldPos(:y) }
+                    left_source.out_port.connect_to left.cmd_in_y_port
+                    right_source.out_port.connect_to right.cmd_in_yaw_port
                     assert left.can_merge?(right)
                 end
             end

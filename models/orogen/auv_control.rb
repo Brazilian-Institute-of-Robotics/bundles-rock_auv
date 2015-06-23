@@ -202,6 +202,7 @@ class OroGen::AuvControl::Base
             field, idx = AXIS_TO_EXPECTED_INPUTS[axis_name]
             expected_in.send(field)[idx] = true
         end
+        expected_in
     end
 
     def update_expected_inputs
@@ -316,28 +317,22 @@ class OroGen::AuvControl::Base
         this_domain = full_input_domain
         other_task.each_input_domain.all? do |in_port, in_domain, in_srv|
             find_data_service(in_srv.name) ||
-                !this_domain.conflicts_with?(in_domain)
+                !this_domain.intersects_with?(in_domain)
         end
     end
+end
 
-    # Tests whether a +model+ can be merged into +self+
+class OroGen::AuvControl::BasePIDController
+    # Customizes the configuration step.
     #
-    # It verifies that the merge is valid w.r.t. the controlled domains
-    def self.can_merge?(model)
-        return if !super
-
-        # Check for services in other_task that are not in self and verify that
-        # adding them to self would not cause a conflict
-        #
-        # Note that the superclass' can_merge? implementation already tests that
-        # services that have the same name are from the same type, so we only
-        # have to test for the service presence on self
-        this_domain  = full_input_domain
-        model.each_dynamic_controlled_system_service.all? do |srv|
-            find_data_service(srv.name) ||
-                !this_domain.conflicts_with?(srv.model.domain)
-        end
-    end
+    # The orocos task is available from orocos_task
+    #
+    # The call to super here applies the configuration on the orocos task. If
+    # you need to override properties, do it afterwards
+    #
+    # def configure
+    #     super
+    # end
 end
 
 class OroGen::AuvControl::PIDController
