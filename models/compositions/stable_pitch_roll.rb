@@ -23,14 +23,13 @@ module RockAUV
     end
 end
 
-require "models/compositions/stable_pitch_roll/constant_world_pos_yaw_control"
-require "models/compositions/stable_pitch_roll/constant_aligned_vel_yaw_control"
-require "models/compositions/stable_pitch_roll/constant_world_pos_z_control"
-require "models/compositions/stable_pitch_roll/constant_aligned_vel_z_control"
 require "models/compositions/stable_pitch_roll/constant_world_pos_xy_control"
+require "models/compositions/stable_pitch_roll/constant_world_pos_z_control"
+require "models/compositions/stable_pitch_roll/constant_world_pos_yaw_control"
+require "models/compositions/stable_pitch_roll/hover"
 
 require "models/compositions/stable_pitch_roll/constant_aligned_vel_x_control"
-
 require "models/compositions/stable_pitch_roll/constant_aligned_vel_y_control"
+require "models/compositions/stable_pitch_roll/constant_aligned_vel_z_control"
+require "models/compositions/stable_pitch_roll/constant_aligned_vel_yaw_control"
 
-require "models/compositions/stable_pitch_roll/hover"
