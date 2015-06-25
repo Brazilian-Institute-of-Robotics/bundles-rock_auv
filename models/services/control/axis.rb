@@ -18,6 +18,12 @@ module RockAUV
 
                 class InvalidAxis < ArgumentError; end
 
+                def hash; encoded end
+                def eql?(other); encoded == other.encoded end
+                def ==(other)
+                    eql?(other)
+                end
+
                 def self.shift_for(axis)
                     if s = SHIFTS[axis]
                         s

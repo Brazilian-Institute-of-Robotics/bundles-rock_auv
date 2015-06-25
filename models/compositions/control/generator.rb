@@ -124,22 +124,23 @@ module RockAUV
                 #   generated cascade composition
                 # @return [Array<Producer>]
                 def self.producer_elements(name, producer)
-                    srv = producer.find_data_service_from_type(Services::Controller)
-                    if !srv
+                    services = producer.find_all_data_services_from_type(Services::Controller)
+                    if services.empty?
                         raise ArgumentError, "#{producer} does not provide #{Services::Controller}"
                     end
-                    # We want the actual service, not the service-as-Controller
-                    srv = srv.as_real_model
 
-                    result = Array.new
-                    # Here, 'srv' is a bound data service on a composition
-                    # child. We want the real child model. Deference #model
-                    # twice
-                    srv.model.model.domain.each do |reference, quantity, axis|
-                        base_srv = Services::Controller.for(Services::Control::Domain.new(reference, quantity, axis))
-                        result << Producer.new(name, [reference,quantity], axis, srv.as(base_srv), "#{reference}_#{quantity}_#{axis.each.to_a.join("_")}")
+                    services.flat_map do |srv|
+                        # We want the actual service, not the service-as-Controller
+                        srv = srv.as_real_model
+
+                        # Here, 'srv' is a bound data service on a composition
+                        # child. We want the real child model. Deference #model
+                        # twice
+                        srv.model.model.domain.each.map do |reference, quantity, axis|
+                            base_srv = Services::Controller.for(Services::Control::Domain.new(reference, quantity, axis))
+                            Producer.new(name, [reference,quantity], axis, srv.as(base_srv), "#{reference}_#{quantity}_#{axis.each.to_a.join("_")}")
+                        end
                     end
-                    result
                 end
 
                 # Applies a given rule on the Cascade submodel
