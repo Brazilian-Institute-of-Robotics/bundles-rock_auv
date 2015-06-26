@@ -8,7 +8,7 @@ module OroGen
             # instead
 
             use_syskit_model PIDController
-            it_should_be_configurable
+            it { is_configurable }
 
             def connect_cmd_in(port)
                 dummy_task_m = Syskit::TaskContext.new_submodel do
@@ -160,7 +160,7 @@ module OroGen
         end
 
         describe PIDController do
-            it_should_be_configurable
+            it { is_configurable }
 
             describe "#configure" do
                 attr_reader :model
@@ -262,39 +262,39 @@ module OroGen
         #    # instead
         #    use_syskit_model PIDController
 
-        #    it_should_be_configurable
+        #    it { is_configurable }
         #end
 
         #describe WorldToAligned do
-        #    it_should_be_configurable
+        #    it { is_configurable }
         #end
 
         #describe AlignedToBody do
-        #    it_should_be_configurable
+        #    it { is_configurable }
         #end
 
         #describe AccelerationController do
-        #    it_should_be_configurable
+        #    it { is_configurable }
         #end
 
         #describe ConstantCommand do
-        #    it_should_be_configurable
+        #    it { is_configurable }
         #end
 
         #describe ConstantCommandGroundFollower do
-        #    it_should_be_configurable
+        #    it { is_configurable }
         #end
 
         #describe WaypointNavigator do
-        #    it_should_be_configurable
+        #    it { is_configurable }
         #end
 
         #describe MotionCommand2DConverter do
-        #    it_should_be_configurable
+        #    it { is_configurable }
         #end
 
         #describe OptimalHeadingController do
-        #    it_should_be_configurable
+        #    it { is_configurable }
         #end
 
     end
