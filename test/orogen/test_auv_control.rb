@@ -157,6 +157,43 @@ module OroGen
                 it "yields the domains as projected on the service's domain" do
                 end
             end
+
+            describe "dynamic handling of dynamic services" do
+                it "creates new ports on the task if services get created on an already-configured task" do
+                    task = syskit_deploy_and_configure(subject_syskit_model)
+                    task.specialize
+                    flexmock(task.orocos_task).should_receive(:addCommandInput).
+                        once.with('in_test', any).
+                        pass_thru
+                    task.require_dynamic_service(
+                        "in_world_pos", as: 'depth',
+                        control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) },
+                        port_name: 'test')
+                    assert task.orocos_task.has_port?('cmd_in_test')
+                end
+
+                it "does not create a new port if it already exists" do
+                    task = syskit_deploy_and_configure(subject_syskit_model)
+                    task.specialize
+                    flexmock(task.orocos_task).should_receive(:addCommandInput).
+                        once.with('in_test', any).
+                        pass_thru
+                    2.times do
+                        task.require_dynamic_service(
+                            "in_world_pos", as: 'depth',
+                            control_domain_srv: RockAUV::Services::ControlledSystem.for { WorldPos(:z) },
+                            port_name: 'test')
+                    end
+                end
+            end
+
+            describe "the addCommandInput operation" do
+                it "creates a port named cmd_{arg}" do
+                    task = syskit_deploy_and_configure(subject_syskit_model)
+                    task.orocos_task.addCommandInput('test', 0)
+                    assert task.orocos_task.has_port?('cmd_test')
+                end
+            end
         end
 
         describe PIDController do

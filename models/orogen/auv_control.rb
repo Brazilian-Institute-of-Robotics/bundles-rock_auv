@@ -67,6 +67,14 @@ class OroGen::AuvControl::Base
         yaw: [:angular, 2]
     ]
 
+    # Stub the operations. Applied to the underlying
+    # Orocos::RubyTasks::StubTaskContext in non-live test mode
+    stub do
+        def addCommandInput(name, *args)
+            create_input_port "cmd_#{name}", '/base/LinearAngular6DCommand'
+        end
+    end
+
     # The expected set of inputs
     #
     # @return [Types.auv_control.ExpectedInputs]
@@ -152,8 +160,11 @@ class OroGen::AuvControl::Base
 
     def add_ports_for_controlled_system_service(srv)
         srv.each_input_port do |port|
-            port_name = port.to_component_port.name.gsub("cmd_", '')
-            orocos_task.addCommandInput(port_name, 0)
+            port_name = port.to_component_port.name
+            cmd_name  = port_name.gsub("cmd_", '')
+            if !orocos_task.has_port?(port_name)
+                orocos_task.addCommandInput(cmd_name, 0)
+            end
         end
     end
 
