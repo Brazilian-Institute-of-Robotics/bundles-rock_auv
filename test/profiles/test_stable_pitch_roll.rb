@@ -8,7 +8,7 @@ module RockAUV
             # give them as argument
             #
             # You usually want this
-            it_should_be_self_contained
+            it { is_self_contained }
         
             # Test if all definitions can be instanciated, i.e. are
             # well-formed networks with no data services
