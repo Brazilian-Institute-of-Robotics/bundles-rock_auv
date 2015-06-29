@@ -137,15 +137,12 @@ class OroGen::AuvControl::Base
         end
     end
 
-    # Hook called when a new dynamic service is created on an already configured
-    # task
+    # Hook called when a new dynamic service is created on this task
     #
     # It calls addCommandInput on the new service, expected_inputs gets updated
     # by {#added_input_port_connection} and {#removed_input_port_connection}
     def added_dynamic_service(srv)
         super
-
-        update_expected_inputs
 
         if setup? && srv.model.fullfills?(RockAUV::Services::ControlledSystem)
             add_ports_for_controlled_system_service(srv)
