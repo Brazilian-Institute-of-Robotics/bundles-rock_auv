@@ -30,7 +30,7 @@ module RockAUV
                     assert_event_emission cmp_task.acquired_initial_position_event
                     assert_equal Hash[x: 1, y: 2],
                         cmp_task.xy_control_child.setpoint
-                    syskit_configure_and_start(cmp_task.xy_samples_child, recursive: true)
+                    syskit_configure_and_start(cmp_task.xy_control_child, recursive: true)
                 end
             end
         end
