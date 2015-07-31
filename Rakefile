@@ -50,7 +50,7 @@ def generate_uic(file, *namespace)
 end
 
 task 'ui' do
-    generate_uic 'lib/rock_auv/auv_control_calibration/ui/main.ui', 'RockAUV', 'AUVControlCalibration'
+    generate_uic 'lib/rock_auv/auv_control_calibration/ui/init.ui', 'RockAUV', 'AUVControlCalibration'
     generate_uic 'lib/rock_auv/auv_control_calibration/ui/generate_from_sdf.ui', 'RockAUV', 'AUVControlCalibration'
 end
 

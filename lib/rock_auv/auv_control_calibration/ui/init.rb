@@ -1,11 +1,11 @@
 require 'rock_auv/auv_control_calibration/sdf_to_matrix'
 require 'rock_auv/auv_control_calibration/ui/generate_from_sdf'
-require 'rock_auv/auv_control_calibration/ui/ui_main'
+require 'rock_auv/auv_control_calibration/ui/ui_init'
 
 module RockAUV
     module AUVControlCalibration
         module Ui
-            class Main
+            class Init
                 attr_reader :config
 
                 CONTROLLER_TASK_NAME = 'auv_control::AccelerationController'
@@ -30,7 +30,7 @@ module RockAUV
                     File.join(config_dir, "#{CONTROLLER_TASK_NAME}.yml")
                 end
 
-                def setup_ui(main)
+                def setupUi(main)
                     super
 
                     config.each_resolved_conf do |name, conf|
@@ -42,7 +42,7 @@ module RockAUV
 
                     conf_chooser.connect(SIGNAL('activated(QString)')) do |conf_name|
                         if conf_name == NEW_CONF_TEXT
-                            conf_name, thruster_names, matrix = GenerateFromSDF.exec(main)
+                            file_name, conf_name, thruster_names, matrix = GenerateFromSDF.exec(main)
                             if conf_name
                                 conf = Hash[
                                     'names' => thruster_names,

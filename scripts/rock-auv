@@ -3,7 +3,11 @@
 require 'Qt'
 require 'vizkit'
 require 'rock/bundles'
+
+Bundles.load
 require 'rock_auv/cli'
 
+require 'rock/gazebo'
+SDF::XML.model_path = Rock::Gazebo.default_model_path
 RockAUV::CLI.start(ARGV)
 
