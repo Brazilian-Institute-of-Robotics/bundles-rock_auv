@@ -4,7 +4,7 @@ require 'Qt'
 require 'vizkit'
 require 'rock/bundles'
 
-Bundles.load
+Bundles.setup_search_paths
 require 'rock_auv/cli'
 
 require 'rock/gazebo'

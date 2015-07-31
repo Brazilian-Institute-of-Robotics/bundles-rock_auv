@@ -1,14 +1,10 @@
-require 'roby'
-require 'syskit'
-Roby.app.using 'syskit'
-Roby.app.base_setup
 require 'roby/interface/async'
 require 'rock_auv/auv_control_calibration/ui/pid_controller'
 
 module RockAUV
     module AUVControlCalibration
         module Ui
-            class DumbZController < Qt::Widget
+            class Calibrate < Qt::Widget
                 attr_reader :syskit
                 attr_reader :ui
                 attr_reader :task_states
@@ -105,7 +101,7 @@ module RockAUV
                     configuration_manager.reload
 
                     @syskit = syskit
-                    @ui = Vizkit.default_loader.load(File.expand_path('auv_calibration.ui', File.dirname(__FILE__)))
+                    @ui = Vizkit.default_loader.load(File.expand_path('calibrate.ui', File.dirname(__FILE__)))
                     main_layout = Qt::VBoxLayout.new(self)
                     main_layout.add_widget ui
 

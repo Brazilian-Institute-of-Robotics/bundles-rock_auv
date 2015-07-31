@@ -31,7 +31,7 @@ module RockAUV
             Roby.app.using 'syskit'
             Roby.app.base_setup
             Roby.app.setup_dirs
-            Orocos.initialize
+            Bundles.initialize
 
             task   = Orocos::Async.proxy(task)
             pose_port = task.port(port)
