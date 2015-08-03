@@ -14,7 +14,7 @@ module RockAUV
             #
             # It can be used directly in profiles, or (at your convenience),
             # by subclassing it
-            def self.for(producers, rules: Control::Generator::DEFAULT_RULES)
+            def self.for(producers, rules: Control::Generator::DEFAULT_THRUSTER_CONTROL_RULES)
                 Control::Generator.new(rules).create(producers)
             end
 

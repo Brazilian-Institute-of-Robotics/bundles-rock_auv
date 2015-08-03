@@ -23,26 +23,6 @@ module RockAUV
                              OroGen::AuvControl::AccelerationController)
                 ]
 
-                DEFAULT_RULES = [
-                    Rule.new("pos_world2aligned", [:world,:pos], [:aligned,:pos],
-                             Hash[Axis.new(:x,:y) => Axis.new(:x,:y)],
-                             OroGen::AuvControl::WorldToAligned),
-                    Rule.new("vel_world2aligned", [:world,:vel], [:aligned,:vel],
-                             Hash[Axis.new(:x,:y) => Axis.new(:x,:y)],
-                             OroGen::AuvControl::WorldToAligned),
-                    Rule.new("aligned_pos2vel", [:aligned,:pos], [:aligned,:vel],
-                             Hash[],
-                             OroGen::AuvControl::PIDController),
-                    Rule.new("vel_aligned2body", [:aligned,:vel], [:body,:vel],
-                             Hash[Axis.new(:x,:y,:z) => Axis.new(:x,:y,:z)],
-                             OroGen::AuvControl::AlignedToBody),
-                    Rule.new("body_vel2effort", [:body,:vel], [:body,:effort],
-                             Hash[],
-                             OroGen::AuvControl::PIDController),
-                    *DEFAULT_THRUSTER_CONTROL_RULES
-                ]
-
-
                 Producer = Struct.new :name, :domain, :axis, :bound_service, :port_name do
                     def to_s
                         "#<Producer/#{domain[0]}/#{domain[1]}/#{axis} #{bound_service}>"
