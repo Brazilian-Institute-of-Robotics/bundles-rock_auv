@@ -25,7 +25,7 @@ module RockAUV
 
                 # The encoded domain
                 #
-                # You usually should not access this directly, but use {get}
+                # You usually should not access this directly, but use {#get}
                 #
                 # @return [Integer]
                 attr_reader :encoded

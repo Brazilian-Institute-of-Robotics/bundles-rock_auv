@@ -5,7 +5,7 @@ module RockAUV
         module Control
             # @api private
             #
-            # Evaluation context for the blocks given to {Services::Domain.for}
+            # Evaluation context for the blocks given to {Element.for}
             #
             # This is a helper for {Controller.for} and
             # {ControlledSystem.for}

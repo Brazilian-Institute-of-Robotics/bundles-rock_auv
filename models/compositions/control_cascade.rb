@@ -4,7 +4,10 @@ module RockAUV
     module Compositions
         # Root model for the control cascades based on auv_control 
         #
-        # Specific cascades are created with {Cascade.for}
+        # It also provides automatic (and typechecked) generation of a control
+        # cascade for a certain set of producers. One would call 
+        #
+
         class ControlCascade < Syskit::Composition
             # Creates a composition, submodel of ControlCascade, in which the
             # following producers are wired up to the acceleration controller

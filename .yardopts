@@ -1,0 +1,6 @@
+--plugin utilrb
+--plugin metaruby
+--plugin roby
+--files doc/control.md
+--output-dir doc/out
+

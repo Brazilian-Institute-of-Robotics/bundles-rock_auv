@@ -4,3 +4,4 @@ build/
 logs/
 coverage/
 config/roby-display.yml
+doc/out

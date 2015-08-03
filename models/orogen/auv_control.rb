@@ -18,7 +18,7 @@ require 'models/services/controlled_system'
 #
 # For instance, if one needs to instanciate an aligned-velocity input, he would
 # use the 'in_aligned_velocity' service. The service would in turn create the
-# "cmd_in_#{name}" port, where name is the name of the instanciated service (the
+# "cmd_in_<name>" port, where name is the name of the instanciated service (the
 # argument to the 'as' option)
 #
 # On the output side, the goal is more to provide typing for the output (as all
@@ -82,13 +82,13 @@ class OroGen::AuvControl::Base
 
     # Adds a controller input within the given control domain
     #
-    # It creates a new task port called 'cmd_in_#{as}'
+    # It creates a new task port called 'cmd_in_<as>'
     #
     # @param [RockAUV::Services::Domain,nil] domain the domain object. Can also
     #   be provided by a block which would be passed to
     #   {RockAUV::Services::ControlledSystem.for}
     # @param [String] as the service name. The created input port will be called
-    #   "cmd_in_#{as}"
+    #   "cmd_in_<as>"
     # @return [Model<Component>] the component model that has the corresponding
     #   service. It might not be self.
     #
@@ -347,7 +347,7 @@ class OroGen::AuvControl::PIDController
     # Sets up the controller according to which services have been instanciated.
     #
     # It sets all the relevant configuration properties, that are not already
-    # set by {ControllerBase#configure} (world_frame, position_control, ...)
+    # set by {OroGen::AuvControl::Base#configure} (world_frame, position_control, ...)
     def configure
         super
         orocos_task.world_frame = self.model.world_frame?

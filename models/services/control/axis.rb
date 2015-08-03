@@ -1,7 +1,7 @@
 module RockAUV
     module Services
         module Control
-            # Representation of a set of axis in {x, y, z, yaw, pitch, roll}
+            # Representation of a set of axis in x, y, z, yaw, pitch and roll
             #
             # It is used to build a control {Domain}
             class Axis
@@ -77,7 +77,7 @@ module RockAUV
                 def roll?; get(:roll) end
 
                 # Declares that one of the axis is being controlled
-                # @param [Symbol] parameter
+                # @param [Symbol] axis the axis name
                 def set(axis)
                     @encoded |= (1 << SHIFTS[axis.to_sym])
                     self
@@ -89,7 +89,7 @@ module RockAUV
                 end
 
                 # Tests whether one of the axis is being controlled
-                # @param [Symbol] parameter
+                # @param [Symbol] axis the axis name
                 # @return [Boolean]
                 def get(axis)
                     raw_get(axis) != 0
