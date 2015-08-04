@@ -19,8 +19,7 @@ module RockAUV
         #
         # See {StablePitchRoll::RULES} for more details
         module StablePitchRoll
-            extend Logger::Hierarchy
-            extend Logger::Forward
+            extend Logger::Root('StablePitchRoll', Logger::INFO)
         end
     end
 end
