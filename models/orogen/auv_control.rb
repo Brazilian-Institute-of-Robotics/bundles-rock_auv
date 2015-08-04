@@ -18,7 +18,7 @@ require 'models/services/controlled_system'
 #
 # For instance, if one needs to instanciate an aligned-velocity input, he would
 # use the 'in_aligned_velocity' service. The service would in turn create the
-# "cmd_in_#{name}" port, where name is the name of the instanciated service (the
+# "cmd_in_<name>" port, where name is the name of the instanciated service (the
 # argument to the 'as' option)
 #
 # On the output side, the goal is more to provide typing for the output (as all
@@ -67,6 +67,14 @@ class OroGen::AuvControl::Base
         yaw: [:angular, 2]
     ]
 
+    # Stub the operations. Applied to the underlying
+    # Orocos::RubyTasks::StubTaskContext in non-live test mode
+    stub do
+        def addCommandInput(name, *args)
+            create_input_port "cmd_#{name}", '/base/LinearAngular6DCommand'
+        end
+    end
+
     # The expected set of inputs
     #
     # @return [Types.auv_control.ExpectedInputs]
@@ -74,13 +82,13 @@ class OroGen::AuvControl::Base
 
     # Adds a controller input within the given control domain
     #
-    # It creates a new task port called 'cmd_in_#{as}'
+    # It creates a new task port called 'cmd_in_<as>'
     #
     # @param [RockAUV::Services::Domain,nil] domain the domain object. Can also
     #   be provided by a block which would be passed to
     #   {RockAUV::Services::ControlledSystem.for}
     # @param [String] as the service name. The created input port will be called
-    #   "cmd_in_#{as}"
+    #   "cmd_in_<as>"
     # @return [Model<Component>] the component model that has the corresponding
     #   service. It might not be self.
     #
@@ -137,15 +145,12 @@ class OroGen::AuvControl::Base
         end
     end
 
-    # Hook called when a new dynamic service is created on an already configured
-    # task
+    # Hook called when a new dynamic service is created on this task
     #
     # It calls addCommandInput on the new service, expected_inputs gets updated
     # by {#added_input_port_connection} and {#removed_input_port_connection}
     def added_dynamic_service(srv)
         super
-
-        update_expected_inputs
 
         if setup? && srv.model.fullfills?(RockAUV::Services::ControlledSystem)
             add_ports_for_controlled_system_service(srv)
@@ -155,8 +160,11 @@ class OroGen::AuvControl::Base
 
     def add_ports_for_controlled_system_service(srv)
         srv.each_input_port do |port|
-            port_name = port.to_component_port.name.gsub("cmd_", '')
-            orocos_task.addCommandInput(port_name, 0)
+            port_name = port.to_component_port.name
+            cmd_name  = port_name.gsub("cmd_", '')
+            if !orocos_task.has_port?(port_name)
+                orocos_task.addCommandInput(cmd_name, 0)
+            end
         end
     end
 
@@ -202,6 +210,7 @@ class OroGen::AuvControl::Base
             field, idx = AXIS_TO_EXPECTED_INPUTS[axis_name]
             expected_in.send(field)[idx] = true
         end
+        expected_in
     end
 
     def update_expected_inputs
@@ -316,35 +325,29 @@ class OroGen::AuvControl::Base
         this_domain = full_input_domain
         other_task.each_input_domain.all? do |in_port, in_domain, in_srv|
             find_data_service(in_srv.name) ||
-                !this_domain.conflicts_with?(in_domain)
+                !this_domain.intersects_with?(in_domain)
         end
     end
+end
 
-    # Tests whether a +model+ can be merged into +self+
+class OroGen::AuvControl::BasePIDController
+    # Customizes the configuration step.
     #
-    # It verifies that the merge is valid w.r.t. the controlled domains
-    def self.can_merge?(model)
-        return if !super
-
-        # Check for services in other_task that are not in self and verify that
-        # adding them to self would not cause a conflict
-        #
-        # Note that the superclass' can_merge? implementation already tests that
-        # services that have the same name are from the same type, so we only
-        # have to test for the service presence on self
-        this_domain  = full_input_domain
-        model.each_dynamic_controlled_system_service.all? do |srv|
-            find_data_service(srv.name) ||
-                !this_domain.conflicts_with?(srv.model.domain)
-        end
-    end
+    # The orocos task is available from orocos_task
+    #
+    # The call to super here applies the configuration on the orocos task. If
+    # you need to override properties, do it afterwards
+    #
+    # def configure
+    #     super
+    # end
 end
 
 class OroGen::AuvControl::PIDController
     # Sets up the controller according to which services have been instanciated.
     #
     # It sets all the relevant configuration properties, that are not already
-    # set by {ControllerBase#configure} (world_frame, position_control, ...)
+    # set by {OroGen::AuvControl::Base#configure} (world_frame, position_control, ...)
     def configure
         super
         orocos_task.world_frame = self.model.world_frame?

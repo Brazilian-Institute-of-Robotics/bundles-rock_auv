@@ -7,9 +7,9 @@ module RockAUV
                 attr_reader :cmp_task, :initial_position
 
                 before do
-                    @cmp_task = stub_and_deploy(Hover, recursive: true)
-                    syskit_setup_and_start(cmp_task, recursive: false)
-                    syskit_setup_and_start(cmp_task.xy_samples_child, recursive: false)
+                    @cmp_task = syskit_stub_and_deploy(Hover, recursive: true)
+                    syskit_configure_and_start(cmp_task, recursive: false)
+                    syskit_configure_and_start(cmp_task.xy_samples_child, recursive: false)
 
                     @initial_position = Types.base.samples.RigidBodyState.new
                     initial_position.position = Eigen::Vector3.new(1, 2, 3)
@@ -30,7 +30,7 @@ module RockAUV
                     assert_event_emission cmp_task.acquired_initial_position_event
                     assert_equal Hash[x: 1, y: 2],
                         cmp_task.xy_control_child.setpoint
-                    syskit_setup_and_start(cmp_task.xy_samples_child, recursive: true)
+                    syskit_configure_and_start(cmp_task.xy_control_child, recursive: true)
                 end
             end
         end

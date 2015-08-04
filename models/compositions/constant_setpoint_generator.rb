@@ -32,12 +32,12 @@ module RockAUV
 
                 (AXIS_NAMES - axis.each.to_a).each do |axis_name|
                     if hash.has_key?(axis_name) && !Base.unset?(hash[axis_name])
-                        raise ArgumentError, "expected axis #{axis_name} to not be set in setpoint, but it is"
+                        raise ArgumentError, "expected axis #{axis_name} to not be set in setpoint for #{model.domain_srv}, but it is"
                     end
                 end
                 axis.each do |axis_name|
                     if !hash.has_key?(axis_name) || Base.unset?(hash[axis_name])
-                        raise ArgumentError, "expected axis #{axis_name} to be set in setpoint, but it is not"
+                        raise ArgumentError, "expected axis #{axis_name} to be set in setpoint for #{model.domain_srv}, but it is not"
                     end
                 end
 

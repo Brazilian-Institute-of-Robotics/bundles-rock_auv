@@ -1,4 +1,5 @@
 require 'thor'
+require 'rock_auv/auv_control_calibration/cli'
 
 module RockAUV
     class CLI < Thor
@@ -20,6 +21,9 @@ module RockAUV
             end
         end
 
+        desc 'control-calibration', 'access to the AUV control calibration tools'
+        subcommand :control_calibration, AUVControlCalibration::CLI
+
         desc 'control FEEDBACK_TASK_NAME [FEEDBACK_PORT_NAME]',
             'start a control UI, using the given task/port for feedback. If no port is given, it uses the default of "port_samples"'
         def control(task, port = "pose_samples")
@@ -27,7 +31,7 @@ module RockAUV
             Roby.app.using 'syskit'
             Roby.app.base_setup
             Roby.app.setup_dirs
-            Orocos.initialize
+            Bundles.initialize
 
             task   = Orocos::Async.proxy(task)
             pose_port = task.port(port)
@@ -40,8 +44,6 @@ module RockAUV
             end
             vizkit(w)
         end
-
-        default_task :connect
     end
 end
 

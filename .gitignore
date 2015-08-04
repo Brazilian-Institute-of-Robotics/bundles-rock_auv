@@ -3,3 +3,5 @@ build/
 .yardoc
 logs/
 coverage/
+config/roby-display.yml
+doc/out

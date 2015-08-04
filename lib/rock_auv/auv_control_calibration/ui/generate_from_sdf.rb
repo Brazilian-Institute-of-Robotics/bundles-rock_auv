@@ -53,6 +53,10 @@ module RockAUV
                     conf_name_edit.text
                 end
 
+                def file_name
+                    sdf_path_edit.text
+                end
+
                 def matrix
                     AUVControlCalibration.sdf_thrusters_to_matrix(thrusters.values)
                 end
@@ -62,7 +66,8 @@ module RockAUV
                     generator = new
                     generator.setup_ui(dialog)
                     if dialog.exec == Qt::Dialog::Accepted
-                        return generator.conf_name,
+                        return generator.file_name,
+                            generator.conf_name,
                             generator.thruster_names,
                             generator.matrix
                     end
